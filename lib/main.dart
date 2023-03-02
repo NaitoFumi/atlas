@@ -1,7 +1,13 @@
 import 'dart:collection';
+import 'dart:developer';
 
 import 'package:flutter/material.dart';
+import 'package:logger/logger.dart';
 import 'package:table_calendar/table_calendar.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
+
+import './trainingRecord.dart';
+import './trainingDb.dart';
 
 void main() => runApp(MyApp());
 
@@ -9,9 +15,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      // Your other code here
       home: CalendarScreen()
-      // home: TrainingRecordScreen()
     );
   }
 }
@@ -27,67 +31,57 @@ class _CalendarScreenState extends State<CalendarScreen> {
   DateTime _focusedDay = DateTime.now();
   CalendarFormat _calendarFormat = CalendarFormat.month;
   DateTime? _selectedDay;
-  Map<DateTime, List> _eventsList = {};
+  // Map<DateTime, List> _eventsList = {};
+  List<TrainingTask> taskList = [];
 
-  // Data fields
-  List<String> events = ["Event 1", "Event 2"];
-  List<String> parts = ["Part 1", "Part 2"];
+  final dbHelper = TrainingDatabase.instance;
 
-  // Form fields
-  String selectedEvent = "Event 1";
-  String selectedPart = "Part 1";
+  final logger = Logger();
 
   //event loader
-  int getHashCode(DateTime key) {
-    return key.day * 1000000 + key.month * 10000 + key.year;
-  }
+  // int getHashCode(DateTime key) {
+  //   return key.day * 1000000 + key.month * 10000 + key.year;
+  // }
   @override
   //event loader
   void initState() {
     super.initState();
     _selectedDay = _focusedDay;
     //サンプルのイベントリスト
-    _eventsList = {
-      DateTime.now().subtract(Duration(days: 2)): ['Event A6', 'Event B6'],
-      DateTime.now(): ['Event A7', 'Event B7', 'Event C7', 'Event D7'],
-      DateTime.now().add(Duration(days: 1)): [
-        'Event A8',
-        'Event B8',
-        'Event C8',
-        'Event D8'
-      ],
-      DateTime.now().add(Duration(days: 3)):
-          Set.from(['Event A9', 'Event A9', 'Event B9']).toList(),
-      DateTime.now().add(Duration(days: 7)): [
-        'Event A10',
-        'Event B10',
-        'Event C10'
-      ],
-      DateTime.now().add(Duration(days: 11)): ['Event A11', 'Event B11'],
-      DateTime.now().add(Duration(days: 17)): [
-        'Event A12',
-        'Event B12',
-        'Event C12',
-        'Event D12'
-      ],
-      DateTime.now().add(Duration(days: 22)): ['Event A13', 'Event B13'],
-      DateTime.now().add(Duration(days: 26)): [
-        'Event A14',
-        'Event B14',
-        'Event C14'
-      ],
-    };
+    // _eventsList = {
+    //   DateTime.now().subtract(Duration(days: 2)): ['Event A6', 'Event B6'],
+    //   DateTime.now(): ['Event A7', 'Event B7', 'Event C7', 'Event D7','Event E7','Event F7','Event G7'],
+    //   DateTime.now().add(Duration(days: 1)): [
+    //     'Event A8',
+    //     'Event B8',
+    //     'Event C8',
+    //     'Event D8'
+    //   ],
+    // };
+  }
+
+  void _getTrainingTasks() async {
+    List<TrainingTask> task = await dbHelper.getTrainingTasks();
+    if (task.isNotEmpty) {
+      logger.d('TrainingTask select');
+    } else {
+      logger.d('Failed to select TrainingTask');
+    }
+    taskList = task;
+    inspect(task);
+    // inspect(dbHelper);
   }
 
   @override
   Widget build(BuildContext context) {
-    final _events = LinkedHashMap<DateTime, List>(
-      equals: isSameDay,
-      hashCode: getHashCode,
-    )..addAll(_eventsList);
+    // final _events = LinkedHashMap<DateTime, List>(
+    //   equals: isSameDay,
+    //   hashCode: getHashCode,
+    // )..addAll(_eventsList);
 
     List _getEventForDay(DateTime day) {
-      return _events[day] ?? [];
+      _getTrainingTasks();
+      return taskList;
     }
     return Scaffold(
       appBar: AppBar(
@@ -99,7 +93,6 @@ class _CalendarScreenState extends State<CalendarScreen> {
           Container(
             child:
               TableCalendar(
-                // 以下必ず設定が必要
                 firstDay: DateTime.utc(2020, 1, 1),
                 lastDay: DateTime.utc(2030, 12, 31),
                 focusedDay: _focusedDay,
@@ -122,16 +115,19 @@ class _CalendarScreenState extends State<CalendarScreen> {
                     });
                   }
                 },
-                eventLoader: _getEventForDay,
+                // eventLoader: _getEventForDay,
               ),
           ),
-          ListView(
-            shrinkWrap: true,
-            children: _getEventForDay(_selectedDay!)
-                .map((event) => ListTile(
-                      title: Text(event.toString()),
-                    ))
-                .toList(),
+          SizedBox(
+            height: 300,
+            child: ListView(
+              shrinkWrap: true,
+              children: _getEventForDay(_selectedDay!)
+                  .map((event) => ListTile(
+                        title: Text(event.toString()),
+                      ))
+                  .toList(),
+            ),
           ),
           Padding(
             padding: const EdgeInsets.all(16.0),
@@ -139,59 +135,70 @@ class _CalendarScreenState extends State<CalendarScreen> {
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
                 Expanded(
-                  child: DropdownButtonFormField(
-                    // Populate list of events
-                    items: events.map((event) {
-                      return DropdownMenuItem(
-                        value: event,
-                        child: Text(event)
+                  child: ElevatedButton(
+                    onPressed: () {
+                      // handle add training data button tap here
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => TrainingRecordScreen(paramDate: _selectedDay,)),
                       );
-                    }).toList(),
-                    // Set the value
-                    value: selectedEvent,
-                    onChanged: (String? value) {
-                      setState(() {
-                        selectedEvent = value!;
-                      });
                     },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.blue,
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(24),
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: const [
+                        Icon(Icons.add, color: Colors.white),
+                        SizedBox(width: 4),
+                        Text(
+                          "Add",
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
-                SizedBox(width: 16),
+                const SizedBox(width: 16),
                 Expanded(
-                  child: DropdownButtonFormField(
-                    // Populate list of parts
-                    items: parts.map((part) {
-                      return DropdownMenuItem(
-                        value: part,
-                        child: Text(part)
+                  child: ElevatedButton(
+                    onPressed: () {
+                      // handle add training data button tap here
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => TrainingRecordScreen(paramDate: _selectedDay,)),
                       );
-                    }).toList(),
-                    // Set the value
-                    value: selectedPart,
-                    onChanged: (String? value) {
-                      setState(() {
-                        selectedPart = value!;
-                      });
                     },
-                  ),
-                ),
-                SizedBox(width: 16),
-                Expanded(
-                  child: DropdownButtonFormField(
-                    // Populate list of parts
-                    items: parts.map((part) {
-                      return DropdownMenuItem(
-                        value: part,
-                        child: Text(part)
-                      );
-                    }).toList(),
-                    // Set the value
-                    value: selectedPart,
-                    onChanged: (String? value) {
-                      setState(() {
-                        selectedPart = value!;
-                      });
-                  },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.blue,
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(24),
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: const [
+                        Icon(Icons.add, color: Colors.white),
+                        SizedBox(width: 4),
+                        Text(
+                          "",
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ],
@@ -199,118 +206,6 @@ class _CalendarScreenState extends State<CalendarScreen> {
           ),
         ]
       )
-    );
-  }
-}
-class TrainingRecordScreen extends StatefulWidget {
-  const TrainingRecordScreen({super.key});
-
-  @override
-  // ignore: library_private_types_in_public_api
-  _TrainingRecordScreenState createState() => _TrainingRecordScreenState();
-}
-class _TrainingRecordScreenState extends State<TrainingRecordScreen> {
-  // Data fields
-  List<String> events = ["Event 1", "Event 2"];
-  List<String> parts = ["Part 1", "Part 2"];
-  int weight = 0;
-  int reps = 0;
-
-  // Form fields
-  String selectedEvent = "Event 1";
-  String selectedPart = "Part 1";
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text("Training Record"),
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          children: <Widget>[
-            DropdownButtonFormField(
-              // Populate list of events
-              items: events.map((event) {
-                return DropdownMenuItem(
-                  value: event,
-                  child: Text(event)
-                );
-              }).toList(),
-              // Set the value
-              value: selectedEvent,
-              onChanged: (String? value) {
-                setState(() {
-                  selectedEvent = value!;
-                });
-             },
-            ),
-            DropdownButtonFormField(
-              // Populate list of parts
-              items: parts.map((part) {
-                return DropdownMenuItem(
-                  value: part,
-                  child: Text(part)
-                );
-              }).toList(),
-              // Set the value
-              value: selectedPart,
-              onChanged: (String? value) {
-                setState(() {
-                  selectedPart = value!;
-                });
-             },
-            ),
-            // Slider for the weight
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: <Widget>[
-                const Text("Weight"),
-                SizedBox(
-                  width: 100,
-                  child: Slider(
-                    value: weight.toDouble(),
-                    min: 0,
-                    max: 200,
-                    divisions: 20,
-                    label: '$weight kgs',
-                    onChanged: (value) {
-                      setState(() {
-                        weight = value.round();
-                      });
-                    },
-                  ),
-                ),
-                Text("$weight kg"),
-              ],
-            ),
-            // Slider for the reps
-            Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: <Widget>[
-                  const Text("Number of Reps"),
-                  SizedBox(
-                    width: 100,
-                    child: Slider(
-                      value: reps.toDouble(),
-                      min: 0,
-                      max: 25,
-                      divisions: 25,
-                      label: '$reps reps',
-                      onChanged: (value) {
-                        setState(() {
-                          reps = value.round();
-                        });
-                      },
-                    ),
-                  ),
-                  Text("$reps reps"),
-                ],
-              )
-          ],
-        ),
-      ),
     );
   }
 }
