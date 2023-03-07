@@ -2,11 +2,11 @@
 import 'dart:async';
 import 'dart:developer';
 import 'dart:io';
-import 'package:logger/logger.dart';
+// import 'package:logger/logger.dart';
 import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
 
-final logger = Logger();
+import './logger_wrap.dart';
 
 class Evnet {
   int? id;

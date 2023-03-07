@@ -2,10 +2,10 @@ import 'dart:collection';
 import 'dart:developer';
 
 import 'package:flutter/material.dart';
-import 'package:logger/logger.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
+import './logger_wrap.dart';
 import './trainingRecord.dart';
 import './trainingDb.dart';
 
@@ -35,8 +35,6 @@ class _CalendarScreenState extends State<CalendarScreen> {
   List<TrainingTask> taskList = [];
 
   final dbHelper = TrainingDatabase.instance;
-
-  final logger = Logger();
 
   //event loader
   // int getHashCode(DateTime key) {
@@ -68,8 +66,6 @@ class _CalendarScreenState extends State<CalendarScreen> {
       logger.d('Failed to select TrainingTask');
     }
     taskList = task;
-    inspect(task);
-    // inspect(dbHelper);
   }
 
   @override
