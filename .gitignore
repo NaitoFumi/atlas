@@ -26,3 +26,4 @@ build/ios/iphonesimulator/Runner.app/Frameworks/App.framework/App
 build/ios/iphonesimulator/Runner.app/Frameworks/App.framework/_CodeSignature/CodeResources
 build/ios/iphonesimulator/Runner.app/Frameworks/App.framework/flutter_assets/kernel_blob.bin
 build/ios/iphonesimulator/Runner.app/_CodeSignature/CodeResources
+build/
