@@ -3,6 +3,33 @@ import 'package:flutter/services.dart';
 
 
 import './logger_wrap.dart';
+import 'core/structure.dart';
+class TrainingTaskList extends StatefulWidget {
+
+  final TrainingTaskItem trainingTaskItem;
+
+  TrainingTaskList(
+    {
+      Key? key,
+      required this.trainingTaskItem,
+    }
+  );
+
+  @override
+  _TrainingTaskList createState() => _TrainingTaskList();
+
+}
+class _TrainingTaskList extends State<TrainingTaskList> {
+  @override
+  Widget build(BuildContext context) {
+    return
+    ListTile(
+      leading: Icon(Icons.add_a_photo),
+      title: Text("${widget.trainingTaskItem.eventName}"),
+    )
+    ;
+  }
+}
 
 class TrainingSetFormText extends StatelessWidget {
 

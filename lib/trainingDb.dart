@@ -1,12 +1,14 @@
 // ignore: file_names
 import 'dart:async';
 import 'dart:developer';
+import 'dart:ffi';
 import 'dart:io';
 // import 'package:logger/logger.dart';
 import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
 
 import './logger_wrap.dart';
+import './core/structure.dart';
 
 class Evnet {
   int? id;
@@ -21,9 +23,9 @@ class Evnet {
 
   factory Evnet.fromJson(Map<String, dynamic> json) {
     return Evnet(
-      id: json['id'],
-      name: json['name'],
-      defMets: json['defMets'],
+      id: json['id'] as int,
+      name: json['name'] as String,
+      defMets: json['defMets'] as double,
     );
   }
   Map<String, dynamic> toJson() => {
@@ -46,9 +48,9 @@ class TrainingTask {
 
   factory TrainingTask.fromJson(Map<String, dynamic> json) {
     return TrainingTask(
-      id: json['id'],
+      id: json['id'] as int,
       date: DateTime.parse(json['date']),
-      eventId: json['eventId'],
+      eventId: json['eventId'] as int,
     );
   }
   Map<String, dynamic> toJson() => {
@@ -356,15 +358,25 @@ class TrainingDatabase {
     // logger.d(result);
     return result.map((json) => Evnet.fromJson(json)).toList();
   }
-  Future<List<TrainingTask>> getTrainingTasks() async {
+  Future<List<TrainingTaskItem>> getTrainingTasks(DateTime start, DateTime end) async {
     final db = await instance.database;
-    final DateTime start = DateTime(2023, 2, 1);
-    final DateTime end = DateTime(2023, 3, 31);
     final result = await db.rawQuery(
       'SELECT * FROM training_task WHERE date BETWEEN ? AND ?',[start.toIso8601String(), end.toIso8601String()],
-      // 'SELECT * FROM training_task WHERE date BETWEEN ? AND ? AND eventId IN (SELECT eventId FROM event)',[start.toIso8601String(), end.toIso8601String()],
+      // 'SELECT * FROM training_task WHERE date BETWEEN ? AND ? AND eventId IN (SELECT id AS eventId, name AS eventName, defMets AS eventDefMets FROM event)',[start.toIso8601String(), end.toIso8601String()],
+      // '''SELECT
+      //     training_task.*,
+      //     event.name AS eventName,
+      //     event.defMets AS eventDefMets
+      //   FROM
+      //     training_task
+      //   WHERE
+      //     date BETWEEN ? AND ?
+      //   JOIN
+      //     event ON training_task.eventId = event.id''',
+      //   [start.toIso8601String(), end.toIso8601String()],
     );
-    return result.map((json) => TrainingTask.fromJson(json)).toList();
+    // return result.map((json) => TrainingTask.fromJson(json)).toList();
+    return result.map((json) => TrainingTaskItem.fromJson(json)).toList();
   }
   Future<int> insertTrainingTask(TrainingTask task) async {
     final db = await instance.database;

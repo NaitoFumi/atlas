@@ -6,6 +6,8 @@ import 'package:table_calendar/table_calendar.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 import './logger_wrap.dart';
+import './traningTask.dart';
+import './core/structure.dart';
 import './trainingRecord.dart';
 import './trainingDb.dart';
 
@@ -32,51 +34,34 @@ class _CalendarScreenState extends State<CalendarScreen> {
   CalendarFormat _calendarFormat = CalendarFormat.month;
   DateTime? _selectedDay;
   // Map<DateTime, List> _eventsList = {};
-  List<TrainingTask> taskList = [];
+  List<TrainingTaskItem> taskList = [];
 
   final dbHelper = TrainingDatabase.instance;
 
-  //event loader
-  // int getHashCode(DateTime key) {
-  //   return key.day * 1000000 + key.month * 10000 + key.year;
-  // }
   @override
   //event loader
   void initState() {
     super.initState();
     _selectedDay = _focusedDay;
-    //サンプルのイベントリスト
-    // _eventsList = {
-    //   DateTime.now().subtract(Duration(days: 2)): ['Event A6', 'Event B6'],
-    //   DateTime.now(): ['Event A7', 'Event B7', 'Event C7', 'Event D7','Event E7','Event F7','Event G7'],
-    //   DateTime.now().add(Duration(days: 1)): [
-    //     'Event A8',
-    //     'Event B8',
-    //     'Event C8',
-    //     'Event D8'
-    //   ],
-    // };
   }
 
-  void _getTrainingTasks() async {
-    List<TrainingTask> task = await dbHelper.getTrainingTasks();
+  void _getTrainingTasks(DateTime start, DateTime end) async {
+    List<TrainingTaskItem> task = await dbHelper.getTrainingTasks(start, end);
     if (task.isNotEmpty) {
       logger.d('TrainingTask select');
     } else {
       logger.d('Failed to select TrainingTask');
     }
+
     taskList = task;
   }
 
   @override
   Widget build(BuildContext context) {
-    // final _events = LinkedHashMap<DateTime, List>(
-    //   equals: isSameDay,
-    //   hashCode: getHashCode,
-    // )..addAll(_eventsList);
-
     List _getEventForDay(DateTime day) {
-      _getTrainingTasks();
+      DateTime start = DateTime(day.year, day.month, 1);
+      DateTime end = DateTime(day.year, day.month + 1, 0);
+      _getTrainingTasks(start, end);
       return taskList;
     }
     return Scaffold(
@@ -136,7 +121,14 @@ class _CalendarScreenState extends State<CalendarScreen> {
                       // handle add training data button tap here
                       Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (context) => TrainingRecordScreen(paramDate: _selectedDay,)),
+                        // MaterialPageRoute(builder: (context) => TrainingRecordScreen(paramDate: _selectedDay,)),
+                        MaterialPageRoute(
+                          builder: (context) =>
+                          TrainingTaskScreen(
+                            paramDate: _selectedDay,
+                            trainingTaskList: taskList,
+                          )
+                        ),
                       );
                     },
                     style: ElevatedButton.styleFrom(
@@ -149,16 +141,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: const [
-                        Icon(Icons.add, color: Colors.white),
-                        SizedBox(width: 4),
-                        Text(
-                          "Add",
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                          ),
-                        ),
+                        Icon( Icons.add_task, color: Colors.white, size: 35,),
                       ],
                     ),
                   ),
@@ -170,7 +153,14 @@ class _CalendarScreenState extends State<CalendarScreen> {
                       // handle add training data button tap here
                       Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (context) => TrainingRecordScreen(paramDate: _selectedDay,)),
+                        // MaterialPageRoute(builder: (context) => TrainingRecordScreen(paramDate: _selectedDay,)),
+                        MaterialPageRoute(
+                          builder: (context) =>
+                          TrainingTaskScreen(
+                            paramDate: _selectedDay,
+                            trainingTaskList: taskList,
+                          )
+                        ),
                       );
                     },
                     style: ElevatedButton.styleFrom(
@@ -183,16 +173,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: const [
-                        Icon(Icons.add, color: Colors.white),
-                        SizedBox(width: 4),
-                        Text(
-                          "",
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                          ),
-                        ),
+                        Icon( Icons.analytics, color: Colors.white, size: 35,),
                       ],
                     ),
                   ),

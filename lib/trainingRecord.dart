@@ -155,14 +155,6 @@ class _TrainingRecordScreenState extends State<TrainingRecordScreen> {
                 children: const [
                   Icon(Icons.add, color: Colors.white),
                   SizedBox(width: 4),
-                  Text(
-                    "Add",
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                    ),
-                  ),
                 ],
               ),
             ),
@@ -214,15 +206,8 @@ class _TrainingRecordScreenState extends State<TrainingRecordScreen> {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: const [
+                  Icon(Icons.done_outlined, color: Colors.white),
                   SizedBox(width: 4),
-                  Text(
-                    "Regist",
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                    ),
-                  ),
                 ],
               ),
             ),
