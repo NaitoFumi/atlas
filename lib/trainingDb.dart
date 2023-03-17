@@ -249,16 +249,16 @@ class TrainingDatabase {
   TrainingDatabase._init();
 
   Future<Database> get database async {
-    logger.d(_database);
+    // logger.d(_database);
     if (_database != null) return _database!;
     _database = await _initDB('training.db');
     return _database!;
   }
 
   Future<Database> _initDB(String filePath) async {
-    logger.d("_initDB");
+    // logger.d("_initDB");
     final dbPath = await getDatabasesPath();
-    logger.d(dbPath);
+    // logger.d(dbPath);
     final path = join(dbPath, filePath);
 
     return await openDatabase(path, version: 1, onCreate: _createDB);
@@ -349,7 +349,7 @@ class TrainingDatabase {
   }
 
   Future<List<Evnet>> getEvents() async {
-    logger.d("getEvents");
+    // logger.d("getEvents");
     final db = await instance.database;
     // logger.d(db);
     final result = await db.rawQuery(

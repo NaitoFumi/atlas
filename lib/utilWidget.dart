@@ -1,9 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import './logger_wrap.dart';
 import 'core/structure.dart';
+
+class TrainingSetFormTextListKey {
+  int index;
+  Widget widget;
+  StateNotifierProvider<TrainingStateController, TrainingState> provider;
+
+  TrainingSetFormTextListKey({
+    required this.index,
+    required this.widget,
+    required this.provider,
+  });
+}
+
 class TrainingTaskList extends StatefulWidget {
 
   final TrainingTaskItem trainingTaskItem;
@@ -73,20 +86,23 @@ class TrainingSetFormText extends StatelessWidget {
   }
 }
 
-class TrainingSetFormTextList extends StatefulWidget {
+class TrainingSetFormTextList extends ConsumerStatefulWidget {
+
+  final StateNotifierProvider<TrainingStateController, TrainingState> provider;
 
   TrainingSetFormTextList(
     {
       Key? key,
+      required this.provider,
     }
   );
 
   @override
-  _TrainingSetFormTextList createState() => _TrainingSetFormTextList();
+  TrainingSetFormTextListState createState() => TrainingSetFormTextListState();
 
 }
 
-class _TrainingSetFormTextList extends State<TrainingSetFormTextList> {
+class TrainingSetFormTextListState extends ConsumerState<TrainingSetFormTextList> {
 
   TextEditingController _weightTtextController = TextEditingController();
   TextEditingController _repsTtextController = TextEditingController();
@@ -123,6 +139,7 @@ class _TrainingSetFormTextList extends State<TrainingSetFormTextList> {
       setState(() {
         weight = double.parse(_weightTtextController.text);
         rm = calculateRM(weight, reps);
+        ref.read(widget.provider.notifier).modify(weight,mets,reps,lap);
       });
     }
   }
@@ -131,17 +148,20 @@ class _TrainingSetFormTextList extends State<TrainingSetFormTextList> {
       setState(() {
         reps = int.parse(_repsTtextController.text);
         rm = calculateRM(weight, reps);
+        ref.read(widget.provider.notifier).modify(weight,mets,reps,lap);
       });
     }
   }
   void _updateLap() {
     if(_lapTtextController.text.isNotEmpty) {
       lap = int.parse(_lapTtextController.text);
+      ref.read(widget.provider.notifier).modify(weight,mets,reps,lap);
     }
   }
   void _updateMets(){
     if(_metsTtextController.text.isNotEmpty) {
       mets = double.parse(_metsTtextController.text);
+      ref.read(widget.provider.notifier).modify(weight,mets,reps,lap);
     }
   }
 

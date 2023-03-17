@@ -1,3 +1,5 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 class TrainingTaskItem {
   int id;
   DateTime date;
@@ -29,4 +31,37 @@ class TrainingTaskItem {
     'eventName': eventName,
     'eventDefMets': eventDefMets,
   };
+}
+
+class TrainingState {
+  double weight;
+  double mets;
+  int reps;
+  int lap;
+
+  TrainingState({
+    required this.weight,
+    required this.mets,
+    required this.reps,
+    required this.lap,
+  });
+}
+
+class TrainingStateController extends StateNotifier<TrainingState> {
+  TrainingStateController() : super(
+    TrainingState(
+      weight: 0,
+      mets: 0,
+      reps: 0,
+      lap: 0,
+    )
+  );
+  void modify(weight,mets,reps,lap) {
+    state = TrainingState(
+      weight: weight,
+      mets: mets,
+      reps: reps,
+      lap: lap,
+    );
+  }
 }
