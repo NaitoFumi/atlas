@@ -41,6 +41,7 @@ dependencies:
   path: ^1.8.0
   logger: ^1.2.2
   flutter_riverpod: ^2.3.2
+  intl: ^0.18.0
 
 dev_dependencies:
   flutter_test:

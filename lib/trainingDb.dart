@@ -10,6 +10,35 @@ import 'package:sqflite/sqflite.dart';
 import './logger_wrap.dart';
 import './core/structure.dart';
 
+class BodyComposition {
+  int? id;
+  int date;
+  double bodyWeight;
+  double bfp;
+
+
+  BodyComposition({
+    this.id,
+    required this.date,
+    required this.bodyWeight,
+    required this.bfp,
+  });
+
+  factory BodyComposition.fromJson(Map<String, dynamic> json) {
+    return BodyComposition(
+      id: json['id'] as int,
+      date: json['date'] as int,
+      bodyWeight: json['bodyWeight'] as double,
+      bfp: json['bfp'] as double,
+    );
+  }
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'date': date,
+    'bodyWeight': bodyWeight,
+    'bfp': bfp,
+  };
+}
 class Evnet {
   int? id;
   String name;
@@ -37,7 +66,7 @@ class Evnet {
 
 class TrainingTask {
   int? id;
-  DateTime date;
+  int date;
   int eventId;
 
   TrainingTask({
@@ -49,13 +78,13 @@ class TrainingTask {
   factory TrainingTask.fromJson(Map<String, dynamic> json) {
     return TrainingTask(
       id: json['id'] as int,
-      date: DateTime.parse(json['date']),
+      date: json['date'] as int,
       eventId: json['eventId'] as int,
     );
   }
   Map<String, dynamic> toJson() => {
         'id': id,
-        'date': date.toUtc().toIso8601String(),
+        'date': date,
         'eventId': eventId,
   };
 }
@@ -266,13 +295,20 @@ class TrainingDatabase {
 
   Future<void> _createDB(Database db, int version) async {
     await db.execute('''
+      CREATE TABLE body_composition(
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        date INTEGER NOT NULL UNIQUE,
+        bodyWeight REAL NOT NULL,
+        bfp REAL NOT NULL
+      )
+    ''');
+    await db.execute('''
       CREATE TABLE event(
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         name TEXT NOT NULL,
         defMets REAL NOT NULL
       )
     ''');
-    logger.d(db);
     await db.rawQuery('''
       INSERT INTO event (name, defMets)
       VALUES
@@ -281,11 +317,10 @@ class TrainingDatabase {
        ('Dead Lift', 6.0),
        ('Bench Press', 3.0)
     ''');
-    logger.d(db);
     await db.execute('''
       CREATE TABLE training_task(
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        date TEXT NOT NULL,
+        date INTEGER NOT NULL,
         eventId INTEGER NOT NULL,
         FOREIGN KEY(eventId) REFERENCES evnet(id) ON DELETE CASCADE
       )
@@ -348,34 +383,61 @@ class TrainingDatabase {
     ''');
   }
 
+  Future<List<BodyComposition>> getBodyComposition(int date) async {
+    logger.d("getBodyComposition");
+    final db = await instance.database;
+    final result = await db.rawQuery(
+      'SELECT * FROM body_composition WHERE date= ?',[date],
+    );
+    logger.d(date);
+    logger.d(result);
+    return result.map((json) => BodyComposition.fromJson(json)).toList();
+  }
+  Future<int> insertBodyComposition(BodyComposition data) async {
+    logger.d("insertBodyComposition");
+    logger.d(data.date);
+    final db = await instance.database;
+    return await db.insert('body_composition', data.toJson());
+  }
+  Future<int> updateBodyComposition(BodyComposition data) async {
+    final db = await instance.database;
+    return await db.update(
+      'body_composition',
+      data.toJson(),
+      where: 'id = ?',
+      whereArgs: [data.id],
+    );
+  }
   Future<List<Evnet>> getEvents() async {
     // logger.d("getEvents");
     final db = await instance.database;
-    // logger.d(db);
     final result = await db.rawQuery(
       'SELECT * FROM event'
     );
     // logger.d(result);
     return result.map((json) => Evnet.fromJson(json)).toList();
   }
-  Future<List<TrainingTaskItem>> getTrainingTasks(DateTime start, DateTime end) async {
+  Future<List<TrainingTaskItem>> getTrainingTasks(int start, int end) async {
     final db = await instance.database;
     final result = await db.rawQuery(
-      'SELECT * FROM training_task WHERE date BETWEEN ? AND ?',[start.toIso8601String(), end.toIso8601String()],
+      // 'SELECT * FROM training_task WHERE date BETWEEN ? AND ?',[start, end],
       // 'SELECT * FROM training_task WHERE date BETWEEN ? AND ? AND eventId IN (SELECT id AS eventId, name AS eventName, defMets AS eventDefMets FROM event)',[start.toIso8601String(), end.toIso8601String()],
-      // '''SELECT
-      //     training_task.*,
-      //     event.name AS eventName,
-      //     event.defMets AS eventDefMets
-      //   FROM
-      //     training_task
-      //   WHERE
-      //     date BETWEEN ? AND ?
-      //   JOIN
-      //     event ON training_task.eventId = event.id''',
-      //   [start.toIso8601String(), end.toIso8601String()],
+      // '  SELECT training_task.*, event.name AS eventName, event.defMets AS eventDefMets FROM training_task WHERE date BETWEEN ? AND ?JOIN event ON training_task.eventId = event.id', [start, end],
+      '''
+        SELECT
+          training_task.*,
+          event.name AS eventName,
+          event.defMets AS eventDefMets
+        FROM training_task
+        JOIN event ON training_task.eventId = event.id
+        WHERE
+          training_task.date >= ?
+          AND training_task.date <= ?
+      ''',
+      [start, end],
     );
     // return result.map((json) => TrainingTask.fromJson(json)).toList();
+    logger.d(result);
     return result.map((json) => TrainingTaskItem.fromJson(json)).toList();
   }
   Future<int> insertTrainingTask(TrainingTask task) async {

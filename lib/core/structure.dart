@@ -2,7 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class TrainingTaskItem {
   int id;
-  DateTime date;
+  int date;
   int eventId;
   String eventName;
   double eventDefMets;
@@ -18,7 +18,7 @@ class TrainingTaskItem {
   factory TrainingTaskItem.fromJson(Map<String, dynamic> json) {
     return TrainingTaskItem(
       id: json['id'] as int,
-      date: DateTime.parse(json['date']),
+      date: json['date'] as int,
       eventId: json['eventId'] as int,
       eventName: json['eventName'] as String,
       eventDefMets: json['eventDefMets'] as double,
@@ -38,12 +38,16 @@ class TrainingState {
   double mets;
   int reps;
   int lap;
+  double rm;
+  int kcal;
 
   TrainingState({
     required this.weight,
     required this.mets,
     required this.reps,
     required this.lap,
+    required this.rm,
+    required this.kcal,
   });
 }
 
@@ -54,14 +58,18 @@ class TrainingStateController extends StateNotifier<TrainingState> {
       mets: 0,
       reps: 0,
       lap: 0,
+      rm: 0,
+      kcal: 0,
     )
   );
-  void modify(weight,mets,reps,lap) {
+  void modify(weight,mets,reps,lap,rm,kcal) {
     state = TrainingState(
       weight: weight,
       mets: mets,
       reps: reps,
       lap: lap,
+      rm: rm,
+      kcal: kcal,
     );
   }
 }

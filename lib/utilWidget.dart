@@ -89,11 +89,13 @@ class TrainingSetFormText extends StatelessWidget {
 class TrainingSetFormTextList extends ConsumerStatefulWidget {
 
   final StateNotifierProvider<TrainingStateController, TrainingState> provider;
+  final double bodyWeight;
 
   TrainingSetFormTextList(
     {
       Key? key,
       required this.provider,
+      required this.bodyWeight,
     }
   );
 
@@ -108,7 +110,6 @@ class TrainingSetFormTextListState extends ConsumerState<TrainingSetFormTextList
   TextEditingController _repsTtextController = TextEditingController();
   TextEditingController _lapTtextController = TextEditingController();
   TextEditingController _metsTtextController = TextEditingController();
-  TextEditingController _bodyWeightTtextController = TextEditingController();
 
   double weight = 0;
   int reps = 0;
@@ -120,15 +121,15 @@ class TrainingSetFormTextListState extends ConsumerState<TrainingSetFormTextList
       rm = weight;
     }
     else {
-     rm = (weight * (1 + (reps / 40)));
+      rm = (weight * (1 + (reps / 40)));
     }
     return rm;
   }
 
   int lap = 0;
-  int interval = 0;
+  // int interval = 0;
   double mets = 0;
-  double bodyWeight = 0;
+  int kcal = 0;
 
   double calculateKcal(int lap, double bodyWeight, double mets) {
     return (mets * bodyWeight * (lap / 360) * 1.05);
@@ -139,7 +140,7 @@ class TrainingSetFormTextListState extends ConsumerState<TrainingSetFormTextList
       setState(() {
         weight = double.parse(_weightTtextController.text);
         rm = calculateRM(weight, reps);
-        ref.read(widget.provider.notifier).modify(weight,mets,reps,lap);
+        ref.read(widget.provider.notifier).modify(weight,mets,reps,lap,rm,kcal);
       });
     }
   }
@@ -148,20 +149,22 @@ class TrainingSetFormTextListState extends ConsumerState<TrainingSetFormTextList
       setState(() {
         reps = int.parse(_repsTtextController.text);
         rm = calculateRM(weight, reps);
-        ref.read(widget.provider.notifier).modify(weight,mets,reps,lap);
+        ref.read(widget.provider.notifier).modify(weight,mets,reps,lap,rm,kcal);
       });
     }
   }
   void _updateLap() {
     if(_lapTtextController.text.isNotEmpty) {
       lap = int.parse(_lapTtextController.text);
-      ref.read(widget.provider.notifier).modify(weight,mets,reps,lap);
+      kcal = calculateKcal(lap, widget.bodyWeight, mets).toInt();
+      ref.read(widget.provider.notifier).modify(weight,mets,reps,lap,rm,kcal);
     }
   }
   void _updateMets(){
     if(_metsTtextController.text.isNotEmpty) {
       mets = double.parse(_metsTtextController.text);
-      ref.read(widget.provider.notifier).modify(weight,mets,reps,lap);
+      kcal = calculateKcal(lap, widget.bodyWeight, mets).toInt();
+      ref.read(widget.provider.notifier).modify(weight,mets,reps,lap,rm,kcal);
     }
   }
 

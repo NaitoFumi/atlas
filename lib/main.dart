@@ -40,8 +40,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
   void onSelectedDate(DateTime dateTime) {}
   DateTime _focusedDay = DateTime.now();
   CalendarFormat _calendarFormat = CalendarFormat.month;
-  DateTime? _selectedDay;
-  // Map<DateTime, List> _eventsList = {};
+  late DateTime _selectedDay;
   List<TrainingTaskItem> taskList = [];
 
   final dbHelper = TrainingDatabase.instance;
@@ -50,11 +49,14 @@ class _CalendarScreenState extends State<CalendarScreen> {
   //event loader
   void initState() {
     super.initState();
-    _selectedDay = _focusedDay;
+    //Because data less than a second will not be matched by placing it in the TrainingTask table key
+    DateTime tmp = DateTime(_focusedDay.year, _focusedDay.month, _focusedDay.day);
+    _focusedDay = tmp;
+    _selectedDay = tmp;
   }
 
   void _getTrainingTasks(DateTime start, DateTime end) async {
-    List<TrainingTaskItem> task = await dbHelper.getTrainingTasks(start, end);
+    List<TrainingTaskItem> task = await dbHelper.getTrainingTasks(start.millisecondsSinceEpoch, end.millisecondsSinceEpoch);
     if (task.isNotEmpty) {
       logger.d('TrainingTask select');
     } else {
@@ -97,8 +99,8 @@ class _CalendarScreenState extends State<CalendarScreen> {
             onDaySelected: (selectedDay, focusedDay) {
               if (!isSameDay(_selectedDay, selectedDay)) {
                 setState(() {
-                  _selectedDay = selectedDay;
-                  _focusedDay = focusedDay;
+                  _selectedDay = DateTime(selectedDay.year, selectedDay.month, selectedDay.day);;
+                  _focusedDay = DateTime(focusedDay.year, focusedDay.month, focusedDay.day);
                 });
               }
             },
@@ -110,8 +112,8 @@ class _CalendarScreenState extends State<CalendarScreen> {
               shrinkWrap: true,
               children: _getEventForDay(_selectedDay!)
                   .map((event) => ListTile(
-                        title: Text(event.toString()),
-                      ))
+                    title: Text(event.toString()),
+                  ))
                   .toList(),
             ),
           ),
