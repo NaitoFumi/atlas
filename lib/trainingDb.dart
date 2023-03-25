@@ -278,16 +278,14 @@ class TrainingDatabase {
   TrainingDatabase._init();
 
   Future<Database> get database async {
-    // logger.d(_database);
     if (_database != null) return _database!;
     _database = await _initDB('training.db');
     return _database!;
   }
 
   Future<Database> _initDB(String filePath) async {
-    // logger.d("_initDB");
+    // logger.i("_initDB");
     final dbPath = await getDatabasesPath();
-    // logger.d(dbPath);
     final path = join(dbPath, filePath);
 
     return await openDatabase(path, version: 1, onCreate: _createDB);
@@ -384,18 +382,15 @@ class TrainingDatabase {
   }
 
   Future<List<BodyComposition>> getBodyComposition(int date) async {
-    logger.d("getBodyComposition");
+    // logger.i("getBodyComposition");
     final db = await instance.database;
     final result = await db.rawQuery(
       'SELECT * FROM body_composition WHERE date= ?',[date],
     );
-    logger.d(date);
-    logger.d(result);
     return result.map((json) => BodyComposition.fromJson(json)).toList();
   }
   Future<int> insertBodyComposition(BodyComposition data) async {
-    logger.d("insertBodyComposition");
-    logger.d(data.date);
+    // logger.i("insertBodyComposition");
     final db = await instance.database;
     return await db.insert('body_composition', data.toJson());
   }
@@ -409,20 +404,32 @@ class TrainingDatabase {
     );
   }
   Future<List<Evnet>> getEvents() async {
-    // logger.d("getEvents");
+    // logger.i("getEvents");
     final db = await instance.database;
     final result = await db.rawQuery(
       'SELECT * FROM event'
     );
-    // logger.d(result);
     return result.map((json) => Evnet.fromJson(json)).toList();
   }
-  Future<List<TrainingTaskItem>> getTrainingTasks(int start, int end) async {
+  // Future<List<TrainingTaskItem>> getTrainingTasks(int start, int end) async {
+  Future<List<TrainingTaskItem>> getTrainingTasks(int day) async {
     final db = await instance.database;
     final result = await db.rawQuery(
       // 'SELECT * FROM training_task WHERE date BETWEEN ? AND ?',[start, end],
       // 'SELECT * FROM training_task WHERE date BETWEEN ? AND ? AND eventId IN (SELECT id AS eventId, name AS eventName, defMets AS eventDefMets FROM event)',[start.toIso8601String(), end.toIso8601String()],
       // '  SELECT training_task.*, event.name AS eventName, event.defMets AS eventDefMets FROM training_task WHERE date BETWEEN ? AND ?JOIN event ON training_task.eventId = event.id', [start, end],
+      // '''
+      //   SELECT
+      //     training_task.*,
+      //     event.name AS eventName,
+      //     event.defMets AS eventDefMets
+      //   FROM training_task
+      //   JOIN event ON training_task.eventId = event.id
+      //   WHERE
+      //     training_task.date >= ?
+      //     AND training_task.date <= ?
+      // ''',
+      // [start, end],
       '''
         SELECT
           training_task.*,
@@ -431,16 +438,15 @@ class TrainingDatabase {
         FROM training_task
         JOIN event ON training_task.eventId = event.id
         WHERE
-          training_task.date >= ?
-          AND training_task.date <= ?
+          training_task.date = ?
       ''',
-      [start, end],
+      [day],
     );
-    // return result.map((json) => TrainingTask.fromJson(json)).toList();
-    logger.d(result);
+    // logger.d(day);
     return result.map((json) => TrainingTaskItem.fromJson(json)).toList();
   }
   Future<int> insertTrainingTask(TrainingTask task) async {
+    logger.d(task);
     final db = await instance.database;
     return await db.insert('training_task', task.toJson());
   }

@@ -7,6 +7,7 @@ import 'package:logger/logger.dart';
 
 import './logger_wrap.dart';
 import './core/structure.dart';
+import './core/util.dart';
 import './trainingDb.dart';
 import './utilWidget.dart';
 import './trainingRecord.dart';
@@ -53,37 +54,39 @@ class _TrainingTaskScreenState extends State<TrainingTaskScreen> {
   String strDate = "";
 
   void _getBodyComposition() async {
-    int selectDate = widget.paramDate.millisecondsSinceEpoch;
-    List<BodyComposition> bodyCompositionList = await dbHelper.getBodyComposition(selectDate);
+    int dayUnix = roundUnixTimeToDays(widget.paramDate.millisecondsSinceEpoch);
+    List<BodyComposition> bodyCompositionList = await dbHelper.getBodyComposition(dayUnix);
     if (bodyCompositionList.isNotEmpty) {
-      logger.d('TrainingEvents select');
+      logger.i('TrainingEvents select');
       _lastData.id = bodyCompositionList[0].id;
       _lastData.bodyWeight = bodyCompositionList[0].bodyWeight;
       _lastData.bfp = bodyCompositionList[0].bfp;
-      _lastData.date = selectDate;
-      _newData = _lastData;
+      _lastData.date = bodyCompositionList[0].date;
       _bmr = _calculateBMR(_lastData.bodyWeight, _lastData.bfp);
       _bodyWeightTextController.text = _lastData.bodyWeight.toString();
       _bfpTextController.text = _lastData.bfp.toString();
+      _newData = _lastData;
 
     } else {
-      logger.d('Failed to select TrainingEvents');
+      logger.i('Failed to select TrainingEvents');
       _lastData.id = -1;
-      _lastData.date = selectDate;
+      _lastData.date = 0;
     }
   }
+
   void _insertBodyComposition() async {
     if (_lastData.id == -1) {
+    int dayUnix = roundUnixTimeToDays(widget.paramDate.millisecondsSinceEpoch);
       BodyComposition registData = BodyComposition (
         bfp: _newData.bfp,
         bodyWeight: _newData.bodyWeight,
-        date: widget.paramDate.millisecondsSinceEpoch,
+        date: dayUnix,
       );
       int idBodyComposition = await dbHelper.insertBodyComposition(registData);
       if (idBodyComposition > 0) {
-        logger.d('BodyComposition inserted with taskId: $idBodyComposition');
+        logger.i('BodyComposition inserted with taskId: $idBodyComposition');
       } else {
-        logger.d('Failed to insert BodyComposition');
+        logger.i('Failed to insert BodyComposition');
         Navigator.pop(context);
       }
     }
@@ -91,15 +94,13 @@ class _TrainingTaskScreenState extends State<TrainingTaskScreen> {
       (_lastData.bodyWeight != _newData.bodyWeight) ||
       (_lastData.bfp != _newData.bfp)
     ) {
-      logger.d(_lastData.bodyWeight);
-      logger.d(_newData.bodyWeight);
-      // int idBodyComposition = await dbHelper.updateBodyComposition(_newData);
-      // if (idBodyComposition > 0) {
-      //   logger.d('BodyComposition Update with taskId: $idBodyComposition');
-      // } else {
-      //   logger.d('Failed to Update BodyComposition');
-      //   Navigator.pop(context);
-      // }
+      int idBodyComposition = await dbHelper.updateBodyComposition(_newData);
+      if (idBodyComposition > 0) {
+        logger.i('BodyComposition Update with taskId: $idBodyComposition');
+      } else {
+        logger.i('Failed to Update BodyComposition');
+        Navigator.pop(context);
+      }
     }
     else{
     }
@@ -152,12 +153,16 @@ class _TrainingTaskScreenState extends State<TrainingTaskScreen> {
             _insertBodyComposition();
             Navigator.push(
               context,
-              MaterialPageRoute(builder: (context) => TrainingRecordScreen(paramDate: widget.paramDate, bodyWeight:double.parse(_newData.bodyWeight.toString()))),
+              MaterialPageRoute(
+                builder: (context) =>
+                  TrainingRecordScreen(
+                    paramDate: widget.paramDate,
+                    bodyWeight:double.parse(_newData.bodyWeight.toString())
+                  )
+              ),
             );
           },
-          child: Icon(
-            Icons.add_task, color: Colors.white, size: 60,
-          ),
+          child: const Icon( Icons.add_task, color: Colors.white, size: 60, ),
         ),
       ),
       body: Padding(

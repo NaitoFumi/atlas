@@ -3,14 +3,14 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'core/structure.dart';
+import 'core/util.dart';
 import './logger_wrap.dart';
 import './trainingDb.dart';
 import './utilWidget.dart';
 
 // ignore: must_be_immutable
 class TrainingRecordScreen extends ConsumerStatefulWidget {
-  // ignore: prefer_typing_uninitialized_variables
-  final paramDate;
+  final DateTime paramDate;
   final double bodyWeight;
 
   const TrainingRecordScreen(
@@ -33,10 +33,6 @@ class _TrainingRecordScreenState extends ConsumerState<TrainingRecordScreen> {
   List<Evnet> events = [];
   void _getEventList() async {
      events = await dbHelper.getEvents();
-    //  for (var value in events) {
-    //   logger.d(value.id);
-    //   logger.d(value.name);
-    // }
   }
 
   int index = 0;
@@ -86,15 +82,12 @@ class _TrainingRecordScreenState extends ConsumerState<TrainingRecordScreen> {
               children: [
                 Expanded(
                   child: DropdownButtonFormField(
-                    // Populate list of events
                     items: events.map((event) {
-                      // logger.d(event.name);
                       return DropdownMenuItem(
                         value: event.id,
                         child: Text(event.name)
                       );
                     }).toList(),
-                    // Set the value
                     value: selectedEvent,
                     onChanged: (int? value) {
                       setState(() {
@@ -123,7 +116,6 @@ class _TrainingRecordScreenState extends ConsumerState<TrainingRecordScreen> {
                   flex: 1,
                   child: ElevatedButton(
                     onPressed: () async {
-                      // addWidgetList(context);
                       addWidgetList();
                     },
                     style: ElevatedButton.styleFrom(
@@ -148,20 +140,20 @@ class _TrainingRecordScreenState extends ConsumerState<TrainingRecordScreen> {
                   child: ElevatedButton(
                     onPressed: () async {
                       // handle add training data button tap here
+                      int dayUnix = roundUnixTimeToDays(widget.paramDate.millisecondsSinceEpoch);
                       TrainingTask task = TrainingTask(
-                        date: widget.paramDate.millisecondsSinceEpoch,
+                        date: dayUnix,
                         eventId: selectedEvent
                       );
                       int taskId = await dbHelper.insertTrainingTask(task);
                       if (taskId > 0) {
-                        logger.d('TrainingTask inserted with taskId: $taskId');
+                        logger.i('TrainingTask inserted with taskId: $taskId');
                       } else {
-                        logger.d('Failed to insert TrainingTask');
+                        logger.i('Failed to insert TrainingTask');
                         // ignore: use_build_context_synchronously
                         Navigator.pop(context);
                       }
                       for (TrainingSetFormTextListKey item in _items) {
-                        // logger.d(ref.watch(item.provider).weight);
                         double weight = ref.watch(item.provider).weight;
                         int reps = ref.watch(item.provider).reps;
                         int lap = ref.watch(item.provider).lap;
@@ -181,9 +173,9 @@ class _TrainingRecordScreenState extends ConsumerState<TrainingRecordScreen> {
                         );
                         int setId = await dbHelper.insertTrainingSet(set);
                         if (setId > 0) {
-                          logger.d('TrainingSet inserted with setId: $setId');
+                          logger.i('TrainingSet inserted with setId: $setId');
                         } else {
-                          logger.d('Failed to insert TrainingSet');
+                          logger.i('Failed to insert TrainingSet');
                           Navigator.pop(context);
                         }
                       }

@@ -8,6 +8,7 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import './logger_wrap.dart';
 import './traningTask.dart';
 import './core/structure.dart';
+import './core/util.dart';
 import './trainingRecord.dart';
 import './trainingDb.dart';
 
@@ -41,39 +42,55 @@ class _CalendarScreenState extends State<CalendarScreen> {
   DateTime _focusedDay = DateTime.now();
   CalendarFormat _calendarFormat = CalendarFormat.month;
   late DateTime _selectedDay;
-  List<TrainingTaskItem> taskList = [];
-
   final dbHelper = TrainingDatabase.instance;
+  Map<DateTime, List<TrainingTaskItem>> _eventsList = {};
+  Map _events = {};
+  DateTime _firstDay = DateTime.utc(2020, 1, 1);
+  DateTime _lastDay = DateTime.utc(2030, 12, 31);
 
   @override
-  //event loader
   void initState() {
     super.initState();
-    //Because data less than a second will not be matched by placing it in the TrainingTask table key
-    DateTime tmp = DateTime(_focusedDay.year, _focusedDay.month, _focusedDay.day);
-    _focusedDay = tmp;
-    _selectedDay = tmp;
+    _selectedDay = _focusedDay;
   }
 
-  void _getTrainingTasks(DateTime start, DateTime end) async {
-    List<TrainingTaskItem> task = await dbHelper.getTrainingTasks(start.millisecondsSinceEpoch, end.millisecondsSinceEpoch);
-    if (task.isNotEmpty) {
-      logger.d('TrainingTask select');
+  void _getTrainingTasks(DateTime date) async {
+    int dayUnix = roundUnixTimeToDays(date.millisecondsSinceEpoch);
+    List<TrainingTaskItem> taskList = await dbHelper.getTrainingTasks(dayUnix);
+    if (taskList.isNotEmpty) {
+      // logger.i('TrainingTask select');
     } else {
-      logger.d('Failed to select TrainingTask');
+      // logger.i('Failed to select TrainingTask');
     }
+    for (TrainingTaskItem task in taskList) {
+      DateTime taskDay = DateTime.fromMillisecondsSinceEpoch(task.date);
+      if(_eventsList[taskDay] == null){
+        _eventsList[taskDay] = [];
+      }
+      _eventsList[taskDay]!.add(task);
+    }
+    _events = LinkedHashMap<DateTime, List>(
+      equals: isSameDay,
+      hashCode: getHashCode,
+    )..addAll(_eventsList);
+  }
 
-    taskList = task;
+  List<TrainingTaskItem> _getEventForDay(DateTime date) {
+    _getTrainingTasks(date);
+    return _events[date] ?? [];
+  }
+
+  List<TrainingTaskItem> _setEventForDay(DateTime date) {
+    return _events[date] ?? [];
+  }
+
+  //To assign a digit to each unit so that they do not cover each other
+  int getHashCode(DateTime key) {
+    return key.day * 1000000 + key.month * 10000 + key.year;
   }
 
   @override
   Widget build(BuildContext context) {
-    List _getEventForDay(DateTime day) {
-      DateTime start = DateTime(day.year, day.month, 1);
-      DateTime end = DateTime(day.year, day.month + 1, 0);
-      _getTrainingTasks(start, end);
-      return taskList;
-    }
     return Scaffold(
       appBar: AppBar(
         title: const Text("Calendar"),
@@ -82,8 +99,8 @@ class _CalendarScreenState extends State<CalendarScreen> {
         mainAxisAlignment: MainAxisAlignment.start,
         children: [
           TableCalendar(
-            firstDay: DateTime.utc(2020, 1, 1),
-            lastDay: DateTime.utc(2030, 12, 31),
+            firstDay: _firstDay,
+            lastDay: _lastDay,
             focusedDay: _focusedDay,
             calendarFormat: _calendarFormat,
             onFormatChanged: (format) {
@@ -99,22 +116,24 @@ class _CalendarScreenState extends State<CalendarScreen> {
             onDaySelected: (selectedDay, focusedDay) {
               if (!isSameDay(_selectedDay, selectedDay)) {
                 setState(() {
-                  _selectedDay = DateTime(selectedDay.year, selectedDay.month, selectedDay.day);;
-                  _focusedDay = DateTime(focusedDay.year, focusedDay.month, focusedDay.day);
+                  _selectedDay = selectedDay;
+                  _focusedDay = focusedDay;
                 });
               }
             },
-            // eventLoader: _getEventForDay,
+            eventLoader: _getEventForDay,
           ),
           SizedBox(
             height: 300,
             child: ListView(
               shrinkWrap: true,
-              children: _getEventForDay(_selectedDay!)
-                  .map((event) => ListTile(
-                    title: Text(event.toString()),
-                  ))
-                  .toList(),
+              children: _setEventForDay(_selectedDay).map(
+                (event) => ListTile(
+                  title: Text(event.eventName),
+                  subtitle: Text(event.date.toString()),
+                )
+              )
+              .toList(),
             ),
           ),
           Padding(
@@ -125,15 +144,13 @@ class _CalendarScreenState extends State<CalendarScreen> {
                 Expanded(
                   child: ElevatedButton(
                     onPressed: () {
-                      // handle add training data button tap here
                       Navigator.push(
                         context,
-                        // MaterialPageRoute(builder: (context) => TrainingRecordScreen(paramDate: _selectedDay,)),
                         MaterialPageRoute(
                           builder: (context) =>
                           TrainingTaskScreen(
                             paramDate: _selectedDay,
-                            trainingTaskList: taskList,
+                            trainingTaskList: _setEventForDay(_selectedDay),
                           )
                         ),
                       );
@@ -157,15 +174,13 @@ class _CalendarScreenState extends State<CalendarScreen> {
                 Expanded(
                   child: ElevatedButton(
                     onPressed: () {
-                      // handle add training data button tap here
                       Navigator.push(
                         context,
-                        // MaterialPageRoute(builder: (context) => TrainingRecordScreen(paramDate: _selectedDay,)),
                         MaterialPageRoute(
                           builder: (context) =>
                           TrainingTaskScreen(
                             paramDate: _selectedDay,
-                            trainingTaskList: taskList,
+                            trainingTaskList: _setEventForDay(_selectedDay),
                           )
                         ),
                       );
