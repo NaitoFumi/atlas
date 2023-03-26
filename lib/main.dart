@@ -6,9 +6,10 @@ import 'package:table_calendar/table_calendar.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 import './logger_wrap.dart';
-import './traningTask.dart';
 import './core/structure.dart';
 import './core/util.dart';
+import './utilWidget.dart';
+import './traningTask.dart';
 import './trainingRecord.dart';
 import './trainingDb.dart';
 
@@ -43,7 +44,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
   CalendarFormat _calendarFormat = CalendarFormat.month;
   late DateTime _selectedDay;
   final dbHelper = TrainingDatabase.instance;
-  Map<DateTime, List<TrainingTaskItem>> _eventsList = {};
+  // Map<DateTime, List<TrainingTaskItem>> _eventsList = {};
   Map _events = {};
   DateTime _firstDay = DateTime.utc(2020, 1, 1);
   DateTime _lastDay = DateTime.utc(2030, 12, 31);
@@ -52,13 +53,25 @@ class _CalendarScreenState extends State<CalendarScreen> {
   void initState() {
     super.initState();
     _selectedDay = _focusedDay;
+    _loadTrainigTasksForMonths(_focusedDay);
+  }
+
+  void _loadTrainigTasksForMonths(DateTime date) {
+    DateTime startDate = _focusedDay.subtract(const Duration(days: 31));
+    DateTime endDate = _focusedDay.add(const Duration(days: 31));
+    for (DateTime date = startDate; date.isBefore(endDate); date = date.add(const Duration(days: 1))) {
+      _getTrainingTasks(date);
+    }
   }
 
   void _getTrainingTasks(DateTime date) async {
+    logger.d(date);
+    Map<DateTime, List<TrainingTaskItem>> _eventsList = {};
     int dayUnix = roundUnixTimeToDays(date.millisecondsSinceEpoch);
+    // logger.d(dayUnix);
     List<TrainingTaskItem> taskList = await dbHelper.getTrainingTasks(dayUnix);
     if (taskList.isNotEmpty) {
-      // logger.i('TrainingTask select');
+      logger.i('TrainingTask select');
     } else {
       // logger.i('Failed to select TrainingTask');
     }
@@ -69,18 +82,17 @@ class _CalendarScreenState extends State<CalendarScreen> {
       }
       _eventsList[taskDay]!.add(task);
     }
-    _events = LinkedHashMap<DateTime, List>(
-      equals: isSameDay,
-      hashCode: getHashCode,
-    )..addAll(_eventsList);
+    if(_eventsList.isNotEmpty){
+      setState(() {
+        _events = LinkedHashMap<DateTime, List>(
+          equals: isSameDay,
+          hashCode: getHashCode,
+        )..addAll(_eventsList);
+      });
+    }
   }
 
   List<TrainingTaskItem> _getEventForDay(DateTime date) {
-    _getTrainingTasks(date);
-    return _events[date] ?? [];
-  }
-
-  List<TrainingTaskItem> _setEventForDay(DateTime date) {
     return _events[date] ?? [];
   }
 
@@ -118,8 +130,13 @@ class _CalendarScreenState extends State<CalendarScreen> {
                 setState(() {
                   _selectedDay = selectedDay;
                   _focusedDay = focusedDay;
+                  // _loadTrainigTasksForMonths(_selectedDay);
                 });
               }
+            },
+            onPageChanged: (focusedDay) {
+              _focusedDay = focusedDay;
+              _loadTrainigTasksForMonths(_focusedDay);
             },
             eventLoader: _getEventForDay,
           ),
@@ -127,10 +144,9 @@ class _CalendarScreenState extends State<CalendarScreen> {
             height: 300,
             child: ListView(
               shrinkWrap: true,
-              children: _setEventForDay(_selectedDay).map(
+              children: _getEventForDay(_selectedDay).map(
                 (event) => ListTile(
                   title: Text(event.eventName),
-                  subtitle: Text(event.date.toString()),
                 )
               )
               .toList(),
@@ -141,65 +157,9 @@ class _CalendarScreenState extends State<CalendarScreen> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
-                Expanded(
-                  child: ElevatedButton(
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) =>
-                          TrainingTaskScreen(
-                            paramDate: _selectedDay,
-                            trainingTaskList: _setEventForDay(_selectedDay),
-                          )
-                        ),
-                      );
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.blue,
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(24),
-                      ),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: const [
-                        Icon( Icons.add_task, color: Colors.white, size: 35,),
-                      ],
-                    ),
-                  ),
-                ),
+                Expanded(child: RegistTrainingTaskBtn(selectDay: _selectedDay, trainingTaskList:_getEventForDay(_selectedDay))),
                 const SizedBox(width: 16),
-                Expanded(
-                  child: ElevatedButton(
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) =>
-                          TrainingTaskScreen(
-                            paramDate: _selectedDay,
-                            trainingTaskList: _setEventForDay(_selectedDay),
-                          )
-                        ),
-                      );
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.blue,
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(24),
-                      ),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: const [
-                        Icon( Icons.analytics, color: Colors.white, size: 35,),
-                      ],
-                    ),
-                  ),
-                ),
+                Expanded(child: StaticBtn()),
               ],
             ),
           ),

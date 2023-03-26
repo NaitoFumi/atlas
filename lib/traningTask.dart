@@ -141,6 +141,8 @@ class _TrainingTaskScreenState extends State<TrainingTaskScreen> {
 
   @override
   Widget build(BuildContext context) {
+    logger.d(widget.trainingTaskList);
+    logger.d(widget.trainingTaskList.length);
     return Scaffold(
       appBar: AppBar(
         title: Text(strDate),

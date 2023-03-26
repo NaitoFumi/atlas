@@ -59,7 +59,6 @@ class _TrainingRecordScreenState extends ConsumerState<TrainingRecordScreen> {
   }
 
   int selectedEvent = 1;
-  String a = "a";
 
   @override
   void initState() {

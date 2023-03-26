@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import './logger_wrap.dart';
 import 'core/structure.dart';
+import './traningTask.dart';
 
 class TrainingSetFormTextListKey {
   int index;
@@ -234,5 +235,93 @@ class TrainingSetFormTextListState extends ConsumerState<TrainingSetFormTextList
         ),
       ]
     );
+  }
+}
+
+class RegistTrainingTaskBtn extends StatelessWidget {
+
+  final DateTime selectDay;
+  final List<TrainingTaskItem> trainingTaskList;
+
+  RegistTrainingTaskBtn(
+    {
+      Key? key,
+      required this.selectDay,
+      required this.trainingTaskList,
+    }
+  );
+
+  @override
+  Widget build(BuildContext context) {
+    return
+      ElevatedButton(
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) =>
+              TrainingTaskScreen(
+                paramDate: selectDay,
+                trainingTaskList: trainingTaskList,
+              )
+            ),
+          );
+        },
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Colors.blue,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(24),
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: const [
+            Icon( Icons.add_task, color: Colors.white, size: 35,),
+          ],
+        ),
+      )
+    ;
+  }
+}
+
+class StaticBtn extends StatelessWidget {
+
+  // final String label;
+  // final String hint;
+
+  StaticBtn(
+    {
+      Key? key,
+    }
+  );
+
+  @override
+  Widget build(BuildContext context) {
+    return
+      ElevatedButton(
+        onPressed: () {
+          // Navigator.push(
+            // context,
+            // MaterialPageRoute(
+            //   builder: (context) =>
+            // ),
+          // );
+        },
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Colors.blue,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(24),
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: const [
+            Icon( Icons.analytics, color: Colors.white, size: 35,),
+          ],
+        ),
+      )
+    ;
   }
 }
