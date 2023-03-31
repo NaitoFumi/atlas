@@ -90,7 +90,7 @@ class _TrainingTaskScreenState extends State<TrainingTaskScreen> {
         Navigator.pop(context);
       }
     }
-    else if(
+    else if (
       (_lastData.bodyWeight != _newData.bodyWeight) ||
       (_lastData.bfp != _newData.bfp)
     ) {
@@ -224,7 +224,10 @@ class _TrainingTaskScreenState extends State<TrainingTaskScreen> {
                       scrollDirection: Axis.vertical,
                       shrinkWrap: true,
                       itemBuilder: (BuildContext context, int index){
-                        return TrainingTaskList(trainingTaskItem:widget.trainingTaskList[index]);
+                        return TrainingTaskList(
+                          trainingTaskItem:widget.trainingTaskList[index],
+                          bodyWeight: _newData.bodyWeight
+                        );
                       },
                       itemCount: widget.trainingTaskList.length,
                     ),

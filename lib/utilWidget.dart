@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import './logger_wrap.dart';
 import 'core/structure.dart';
 import './traningTask.dart';
+import './trainingEdit.dart';
 
 class TrainingSetFormTextListKey {
   int index;
@@ -21,11 +22,13 @@ class TrainingSetFormTextListKey {
 class TrainingTaskList extends StatefulWidget {
 
   final TrainingTaskItem trainingTaskItem;
+  final double bodyWeight;
 
   TrainingTaskList(
     {
       Key? key,
       required this.trainingTaskItem,
+      required this.bodyWeight,
     }
   );
 
@@ -40,6 +43,17 @@ class _TrainingTaskList extends State<TrainingTaskList> {
     ListTile(
       leading: Icon(Icons.add_a_photo),
       title: Text("${widget.trainingTaskItem.eventName}"),
+      onTap: (){
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => TrainingEditScreen(
+              task:       widget.trainingTaskItem,
+              bodyWeight: widget.bodyWeight,
+            )
+          ),
+        );
+      },
     )
     ;
   }
@@ -91,12 +105,24 @@ class TrainingSetFormTextList extends ConsumerStatefulWidget {
 
   final StateNotifierProvider<TrainingStateController, TrainingState> provider;
   final double bodyWeight;
+  final double weight;
+  final int reps;
+  final int lap;
+  final double mets;
+  final int kcal;
+  final double rm;
 
   TrainingSetFormTextList(
     {
       Key? key,
       required this.provider,
       required this.bodyWeight,
+      required this.weight,
+      required this.reps,
+      required this.lap,
+      required this.mets,
+      required this.kcal,
+      required this.rm,
     }
   );
 
@@ -127,8 +153,8 @@ class TrainingSetFormTextListState extends ConsumerState<TrainingSetFormTextList
     return rm;
   }
 
-  int lap = 0;
   // int interval = 0;
+  int lap = 0;
   double mets = 0;
   int kcal = 0;
 
@@ -172,6 +198,16 @@ class TrainingSetFormTextListState extends ConsumerState<TrainingSetFormTextList
   @override
   void initState() {
     super.initState();
+    weight = widget.weight;
+    reps   = widget.reps;
+    lap    = widget.lap;
+    mets   = widget.mets;
+    kcal   = widget.kcal;
+    rm     = widget.rm;
+    _weightTtextController.text = widget.weight.toString();
+    _repsTtextController.text   = widget.reps.toString();
+    _lapTtextController.text    = widget.lap.toString();
+    _metsTtextController.text   = widget.mets.toString();
     _weightTtextController.addListener(_updateWeight);
     _repsTtextController.addListener(_updateReps);
     _lapTtextController.addListener(_updateLap);

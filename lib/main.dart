@@ -10,7 +10,6 @@ import './core/structure.dart';
 import './core/util.dart';
 import './utilWidget.dart';
 import './traningTask.dart';
-import './trainingRecord.dart';
 import './trainingDb.dart';
 
 void main() => runApp(
@@ -46,8 +45,8 @@ class _CalendarScreenState extends State<CalendarScreen> {
   final dbHelper = TrainingDatabase.instance;
   // Map<DateTime, List<TrainingTaskItem>> _eventsList = {};
   Map _events = {};
-  DateTime _firstDay = DateTime.utc(2020, 1, 1);
-  DateTime _lastDay = DateTime.utc(2030, 12, 31);
+  final DateTime _firstDay = DateTime.utc(2020, 1, 1);
+  final DateTime _lastDay = DateTime.utc(2030, 12, 31);
 
   @override
   void initState() {
@@ -56,31 +55,24 @@ class _CalendarScreenState extends State<CalendarScreen> {
     _loadTrainigTasksForMonths(_focusedDay);
   }
 
-  void _loadTrainigTasksForMonths(DateTime date) {
+  void _loadTrainigTasksForMonths(DateTime date) async {
     DateTime startDate = _focusedDay.subtract(const Duration(days: 31));
     DateTime endDate = _focusedDay.add(const Duration(days: 31));
-    for (DateTime date = startDate; date.isBefore(endDate); date = date.add(const Duration(days: 1))) {
-      _getTrainingTasks(date);
-    }
-  }
-
-  void _getTrainingTasks(DateTime date) async {
-    logger.d(date);
     Map<DateTime, List<TrainingTaskItem>> _eventsList = {};
-    int dayUnix = roundUnixTimeToDays(date.millisecondsSinceEpoch);
-    // logger.d(dayUnix);
-    List<TrainingTaskItem> taskList = await dbHelper.getTrainingTasks(dayUnix);
-    if (taskList.isNotEmpty) {
-      logger.i('TrainingTask select');
-    } else {
-      // logger.i('Failed to select TrainingTask');
-    }
-    for (TrainingTaskItem task in taskList) {
-      DateTime taskDay = DateTime.fromMillisecondsSinceEpoch(task.date);
-      if(_eventsList[taskDay] == null){
-        _eventsList[taskDay] = [];
+    for (DateTime date = startDate; date.isBefore(endDate); date = date.add(const Duration(days: 1))) {
+      List<TrainingTaskItem> taskList = await dbHelper.getTrainingTasks(roundUnixTimeToDays(date.millisecondsSinceEpoch));
+      if (taskList.isNotEmpty) {
+        // logger.i('TrainingTask select');
+        for (TrainingTaskItem task in taskList) {
+          DateTime taskDay = DateTime.fromMillisecondsSinceEpoch(task.date);
+          if(_eventsList[taskDay] == null){
+            _eventsList[taskDay] = [];
+          }
+          _eventsList[taskDay]!.add(task);
+        }
+      } else {
+        // logger.i('Failed to select TrainingTask');
       }
-      _eventsList[taskDay]!.add(task);
     }
     if(_eventsList.isNotEmpty){
       setState(() {
@@ -130,7 +122,6 @@ class _CalendarScreenState extends State<CalendarScreen> {
                 setState(() {
                   _selectedDay = selectedDay;
                   _focusedDay = focusedDay;
-                  // _loadTrainigTasksForMonths(_selectedDay);
                 });
               }
             },
@@ -147,6 +138,17 @@ class _CalendarScreenState extends State<CalendarScreen> {
               children: _getEventForDay(_selectedDay).map(
                 (event) => ListTile(
                   title: Text(event.eventName),
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => TrainingTaskScreen(
+                          paramDate: _selectedDay,
+                          trainingTaskList: _getEventForDay(_selectedDay),
+                        )
+                      ),
+                    );
+                  },
                 )
               )
               .toList(),

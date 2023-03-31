@@ -45,12 +45,18 @@ class _TrainingRecordScreenState extends ConsumerState<TrainingRecordScreen> {
 
     _list.add(
       TrainingSetFormTextListKey(
-        index: ++index,
-        widget: TrainingSetFormTextList(
-          provider: trainingProvider,
-          bodyWeight: widget.bodyWeight,
-        ),
+        index:    ++index,
         provider: trainingProvider,
+        widget:   TrainingSetFormTextList(
+          provider:   trainingProvider,
+          bodyWeight: widget.bodyWeight,
+          weight:     0,
+          reps:       0,
+          lap:        0,
+          mets:       0,
+          kcal:       0,
+          rm:         0,
+        ),
       )
     );
     setState(() {
