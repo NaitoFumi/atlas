@@ -27,7 +27,7 @@ class TrainingRecordScreen extends ConsumerStatefulWidget {
 }
 class _TrainingRecordScreenState extends ConsumerState<TrainingRecordScreen> {
 
-  final dbHelper = TrainingDatabase.instance;
+  final TrainingDatabase dbHelper = TrainingDatabase.instance;
 
   // Data fields
   List<Evnet> events = [];
@@ -40,7 +40,6 @@ class _TrainingRecordScreenState extends ConsumerState<TrainingRecordScreen> {
   List<TrainingSetFormTextListKey> _list = <TrainingSetFormTextListKey>[];
   // void addWidgetList(BuildContext context) {
   void addWidgetList() {
-    GlobalObjectKey<TrainingSetFormTextListState> trainingSetFromTextListKey = GlobalObjectKey<TrainingSetFormTextListState>(context);
     final StateNotifierProvider<TrainingStateController, TrainingState> trainingProvider = StateNotifierProvider<TrainingStateController, TrainingState>((ref) => TrainingStateController());
 
     _list.add(
@@ -119,89 +118,18 @@ class _TrainingRecordScreenState extends ConsumerState<TrainingRecordScreen> {
                 const Spacer(),
                 Expanded(
                   flex: 1,
-                  child: ElevatedButton(
-                    onPressed: () async {
-                      addWidgetList();
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.blue,
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(24),
-                      ),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: const [
-                        Icon(Icons.add, color: Colors.white),
-                        SizedBox(width: 4),
-                      ],
-                    ),
-                  ),
+                  child: AddBtnTrainingSetForm(onPressedCallback: addWidgetList,)
                 ),
                 const Spacer(),
                 Expanded(
                   flex: 1,
-                  child: ElevatedButton(
-                    onPressed: () async {
-                      // handle add training data button tap here
-                      int dayUnix = roundUnixTimeToDays(widget.paramDate.millisecondsSinceEpoch);
-                      TrainingTask task = TrainingTask(
-                        date: dayUnix,
-                        eventId: selectedEvent
-                      );
-                      int taskId = await dbHelper.insertTrainingTask(task);
-                      if (taskId > 0) {
-                        logger.i('TrainingTask inserted with taskId: $taskId');
-                      } else {
-                        logger.i('Failed to insert TrainingTask');
-                        // ignore: use_build_context_synchronously
-                        Navigator.pop(context);
-                      }
-                      for (TrainingSetFormTextListKey item in _items) {
-                        double weight = ref.watch(item.provider).weight;
-                        int reps = ref.watch(item.provider).reps;
-                        int lap = ref.watch(item.provider).lap;
-                        double mets = ref.watch(item.provider).mets;
-                        double rm = ref.watch(item.provider).rm;
-                        int kcal = ref.watch(item.provider).kcal;
-
-                        TrainingSet set = TrainingSet(
-                          trainingTaskId: taskId,
-                          weight: weight,
-                          reps: reps,
-                          lapTime: lap,
-                          intervalTime: 0,
-                          mets: mets,
-                          rm: rm,
-                          kcal: kcal,
-                        );
-                        int setId = await dbHelper.insertTrainingSet(set);
-                        if (setId > 0) {
-                          logger.i('TrainingSet inserted with setId: $setId');
-                        } else {
-                          logger.i('Failed to insert TrainingSet');
-                          Navigator.pop(context);
-                        }
-                      }
-                      // check if the insert was successful
-                      Navigator.pop(context);
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.blue,
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(24),
-                      ),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: const [
-                        Icon(Icons.done_outlined, color: Colors.white),
-                        SizedBox(width: 4),
-                      ],
-                    ),
-                  ),
+                  child: RegistBtnTrainingSet(
+                    items:    _items,
+                    date:     widget.paramDate,
+                    eventId:  selectedEvent,
+                    dbHelper: dbHelper,
+                    ref:      ref,
+                  )
                 ),
                 const Spacer(),
               ],

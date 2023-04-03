@@ -1,9 +1,13 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import './logger_wrap.dart';
 import 'core/structure.dart';
+import 'core/util.dart';
+import './trainingDb.dart';
 import './traningTask.dart';
 import './trainingEdit.dart';
 
@@ -23,12 +27,14 @@ class TrainingTaskList extends StatefulWidget {
 
   final TrainingTaskItem trainingTaskItem;
   final double bodyWeight;
+  final DateTime paramDate;
 
   TrainingTaskList(
     {
       Key? key,
       required this.trainingTaskItem,
       required this.bodyWeight,
+      required this.paramDate,
     }
   );
 
@@ -50,6 +56,7 @@ class _TrainingTaskList extends State<TrainingTaskList> {
             builder: (context) => TrainingEditScreen(
               task:       widget.trainingTaskItem,
               bodyWeight: widget.bodyWeight,
+              paramDate: widget.paramDate,
             )
           ),
         );
@@ -323,9 +330,6 @@ class RegistTrainingTaskBtn extends StatelessWidget {
 
 class StaticBtn extends StatelessWidget {
 
-  // final String label;
-  // final String hint;
-
   StaticBtn(
     {
       Key? key,
@@ -355,6 +359,89 @@ class StaticBtn extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: const [
             Icon( Icons.analytics, color: Colors.white, size: 35,),
+          ],
+        ),
+      )
+    ;
+  }
+}
+
+class AddBtnTrainingSetForm extends StatelessWidget {
+
+  final Function() onPressedCallback;
+
+  AddBtnTrainingSetForm(
+    {
+      Key? key,
+      required this.onPressedCallback,
+    }
+  );
+
+  @override
+  Widget build(BuildContext context) {
+    return
+      ElevatedButton(
+        onPressed: () async {
+          onPressedCallback();
+        },
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Colors.blue,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(24),
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: const [
+            Icon(Icons.add, color: Colors.white),
+            SizedBox(width: 4),
+          ],
+        ),
+      )
+    ;
+  }
+}
+
+class RegistBtnTrainingSet extends StatelessWidget {
+
+  final List<TrainingSetFormTextListKey> items;
+  final DateTime date;
+  final int eventId;
+  final dbHelper;
+  final ref;
+
+  RegistBtnTrainingSet(
+    {
+      Key? key,
+      required this.items,
+      required this.date,
+      required this.eventId,
+      required this.dbHelper,
+      required this.ref,
+    }
+  );
+
+  @override
+  Widget build(BuildContext context) {
+    return
+      ElevatedButton(
+        onPressed: () async {
+          registTrainingRecodes(items, date, eventId, dbHelper, ref);
+          Navigator.pop(context);
+        },
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Colors.blue,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(24),
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: const [
+            Icon(Icons.done_outlined, color: Colors.white),
+            SizedBox(width: 4),
           ],
         ),
       )

@@ -12,12 +12,14 @@ import './utilWidget.dart';
 class TrainingEditScreen extends ConsumerStatefulWidget {
   final TrainingTaskItem task;
   final double bodyWeight;
+  final DateTime paramDate;
 
   const TrainingEditScreen(
       {
         Key? key,
         required this.task,
         required this.bodyWeight,
+        required this.paramDate,
       }
     ) : super(key: key);
 
@@ -67,6 +69,29 @@ class _TrainingEditScreenState extends ConsumerState<TrainingEditScreen> {
     setState(() {
       _items = _list;
       logger.d(_items);
+    });
+  }
+  void addWidgetList() {
+    final StateNotifierProvider<TrainingStateController, TrainingState> trainingProvider = StateNotifierProvider<TrainingStateController, TrainingState>((ref) => TrainingStateController());
+
+    _list.add(
+      TrainingSetFormTextListKey(
+        index:    ++index,
+        provider: trainingProvider,
+        widget:   TrainingSetFormTextList(
+          provider:   trainingProvider,
+          bodyWeight: widget.bodyWeight,
+          weight:     0,
+          reps:       0,
+          lap:        0,
+          mets:       0,
+          kcal:       0,
+          rm:         0,
+        ),
+      )
+    );
+    setState(() {
+      _items = _list;
     });
   }
 
@@ -121,6 +146,28 @@ class _TrainingEditScreenState extends ConsumerState<TrainingEditScreen> {
               itemCount: _items.length,
             ),
             const SizedBox(height: 16.0),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Spacer(),
+                Expanded(
+                  flex: 1,
+                  child: AddBtnTrainingSetForm(onPressedCallback: addWidgetList,)
+                ),
+                const Spacer(),
+                Expanded(
+                  flex: 1,
+                  child: RegistBtnTrainingSet(
+                    items:    _items,
+                    date:     widget.paramDate,
+                    eventId:  selectedEvent,
+                    dbHelper: dbHelper,
+                    ref:      ref,
+                  )
+                ),
+                const Spacer(),
+              ],
+            ),
           ],
         ),
       ),

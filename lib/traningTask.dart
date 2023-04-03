@@ -141,8 +141,6 @@ class _TrainingTaskScreenState extends State<TrainingTaskScreen> {
 
   @override
   Widget build(BuildContext context) {
-    logger.d(widget.trainingTaskList);
-    logger.d(widget.trainingTaskList.length);
     return Scaffold(
       appBar: AppBar(
         title: Text(strDate),
@@ -226,7 +224,8 @@ class _TrainingTaskScreenState extends State<TrainingTaskScreen> {
                       itemBuilder: (BuildContext context, int index){
                         return TrainingTaskList(
                           trainingTaskItem:widget.trainingTaskList[index],
-                          bodyWeight: _newData.bodyWeight
+                          bodyWeight: _newData.bodyWeight,
+                          paramDate: widget.paramDate,
                         );
                       },
                       itemCount: widget.trainingTaskList.length,
