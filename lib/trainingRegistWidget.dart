@@ -9,25 +9,27 @@ import './trainingDb.dart';
 import './utilWidget.dart';
 
 // ignore: must_be_immutable
-class TrainingEditScreen extends ConsumerStatefulWidget {
-  final TrainingTaskItem task;
+class TrainingRegistWidget extends ConsumerStatefulWidget {
+  final TrainingTaskItem? task;
   final double bodyWeight;
   final DateTime paramDate;
+  final String title;
 
-  const TrainingEditScreen(
+  const TrainingRegistWidget(
       {
         Key? key,
-        required this.task,
+        this.task,
         required this.bodyWeight,
         required this.paramDate,
+        required this.title,
       }
     ) : super(key: key);
 
   @override
   // ignore: library_private_types_in_public_api
-  _TrainingEditScreenState createState() => _TrainingEditScreenState();
+  _TrainingRegistWidgetState createState() => _TrainingRegistWidgetState();
 }
-class _TrainingEditScreenState extends ConsumerState<TrainingEditScreen> {
+class _TrainingRegistWidgetState extends ConsumerState<TrainingRegistWidget> {
 
   final dbHelper = TrainingDatabase.instance;
 
@@ -39,21 +41,24 @@ class _TrainingEditScreenState extends ConsumerState<TrainingEditScreen> {
 
   List<TrainingSet> _sets =[];
   int index = 0;
-  List<TrainingSetFormTextListKey> _items = <TrainingSetFormTextListKey>[];
-  List<TrainingSetFormTextListKey> _list = <TrainingSetFormTextListKey>[];
-  void _getTrainingSetList() async {
-     _sets= await dbHelper.getTrainingSets(widget.task.id);
-     logger.d(_sets);
+  List<TrainingSetFormTextList> _items = <TrainingSetFormTextList>[];
+  List<TrainingSetFormTextList> _list = <TrainingSetFormTextList>[];
+
+  void _getTrainingSetList(int taskId) async {
+    logger.d(taskId);
+     _sets= await dbHelper.getTrainingSets(taskId);
+    logger.d(_sets);
 
     final StateNotifierProvider<TrainingStateController, TrainingState> trainingProvider = StateNotifierProvider<TrainingStateController, TrainingState>((ref) => TrainingStateController());
 
     for (final set in _sets)
     {
       _list.add(
-        TrainingSetFormTextListKey(
+        TrainingSetFormTextList(
           index:    ++index,
           provider: trainingProvider,
-          widget:   TrainingSetFormTextList(
+          setId:    set.id!,
+          widget:   TrainingSetFormTextWidget(
             provider:   trainingProvider,
             bodyWeight: widget.bodyWeight,
             weight:     set.weight,
@@ -68,17 +73,18 @@ class _TrainingEditScreenState extends ConsumerState<TrainingEditScreen> {
     }
     setState(() {
       _items = _list;
-      logger.d(_items);
     });
   }
+
   void addWidgetList() {
     final StateNotifierProvider<TrainingStateController, TrainingState> trainingProvider = StateNotifierProvider<TrainingStateController, TrainingState>((ref) => TrainingStateController());
 
     _list.add(
-      TrainingSetFormTextListKey(
+      TrainingSetFormTextList(
         index:    ++index,
         provider: trainingProvider,
-        widget:   TrainingSetFormTextList(
+        setId:    0,
+        widget:   TrainingSetFormTextWidget(
           provider:   trainingProvider,
           bodyWeight: widget.bodyWeight,
           weight:     0,
@@ -95,22 +101,27 @@ class _TrainingEditScreenState extends ConsumerState<TrainingEditScreen> {
     });
   }
 
-  int selectedEvent = 1;
+  int paramTaskId = 0;
+
+  int selectedEvent = defEvent;
+  final StateNotifierProvider<EventSelectStateController, EventSelectState> eventSelectProvider = StateNotifierProvider<EventSelectStateController, EventSelectState>((ref) => EventSelectStateController());
 
   @override
   void initState() {
     super.initState();
     _getEventList();
-    _getTrainingSetList();
-    selectedEvent = widget.task.eventId;
+    if (widget.task != null) {
+      paramTaskId = widget.task!.id;
+      _getTrainingSetList(paramTaskId);
+      selectedEvent = widget.task!.eventId;
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    _getEventList();
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Training Task Edit"),
+        title: Text(widget.title),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -119,19 +130,10 @@ class _TrainingEditScreenState extends ConsumerState<TrainingEditScreen> {
             Row(
               children: [
                 Expanded(
-                  child: DropdownButtonFormField(
-                    items: events.map((event) {
-                      return DropdownMenuItem(
-                        value: event.id,
-                        child: Text(event.name)
-                      );
-                    }).toList(),
-                    value: selectedEvent,
-                    onChanged: (int? value) {
-                      setState(() {
-                        selectedEvent = value!;
-                      });
-                    },
+                  child: EventsMenu(
+                    events: events,
+                    selectedEvent: selectedEvent,
+                    provider: eventSelectProvider,
                   ),
                 ),
               ],
@@ -158,11 +160,12 @@ class _TrainingEditScreenState extends ConsumerState<TrainingEditScreen> {
                 Expanded(
                   flex: 1,
                   child: RegistBtnTrainingSet(
-                    items:    _items,
-                    date:     widget.paramDate,
-                    eventId:  selectedEvent,
-                    dbHelper: dbHelper,
-                    ref:      ref,
+                    taskId:              paramTaskId,
+                    trainingSetFormList: _items,
+                    date:                widget.paramDate,
+                    eventId:             ref.watch(eventSelectProvider).selectedEventId,
+                    dbHelper:            dbHelper,
+                    ref:                 ref,
                   )
                 ),
                 const Spacer(),

@@ -1,4 +1,7 @@
+import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+const int defEvent = 1;
 
 class TrainingTaskItem {
   int id;
@@ -72,4 +75,39 @@ class TrainingStateController extends StateNotifier<TrainingState> {
       kcal: kcal,
     );
   }
+}
+
+class EventSelectState {
+  int selectedEventId;
+
+  EventSelectState({
+    required this.selectedEventId,
+  });
+}
+
+class EventSelectStateController extends StateNotifier<EventSelectState> {
+  EventSelectStateController() : super(
+    EventSelectState(
+      selectedEventId: defEvent,
+    )
+  );
+  void modify(selectedEventId) {
+    state = EventSelectState(
+      selectedEventId: selectedEventId,
+    );
+  }
+}
+
+class TrainingSetFormTextList {
+  int index;
+  Widget widget;
+  StateNotifierProvider<TrainingStateController, TrainingState> provider;
+  int setId;
+
+  TrainingSetFormTextList({
+    required this.index,
+    required this.widget,
+    required this.provider,
+    required this.setId,
+  });
 }

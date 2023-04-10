@@ -9,19 +9,7 @@ import 'core/structure.dart';
 import 'core/util.dart';
 import './trainingDb.dart';
 import './traningTask.dart';
-import './trainingEdit.dart';
-
-class TrainingSetFormTextListKey {
-  int index;
-  Widget widget;
-  StateNotifierProvider<TrainingStateController, TrainingState> provider;
-
-  TrainingSetFormTextListKey({
-    required this.index,
-    required this.widget,
-    required this.provider,
-  });
-}
+import './trainingRegistWidget.dart';
 
 class TrainingTaskList extends StatefulWidget {
 
@@ -53,10 +41,12 @@ class _TrainingTaskList extends State<TrainingTaskList> {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => TrainingEditScreen(
+            // builder: (context) => TrainingEditScreen(
+            builder: (context) => TrainingRegistWidget(
               task:       widget.trainingTaskItem,
               bodyWeight: widget.bodyWeight,
               paramDate: widget.paramDate,
+              title: "Training Task Edit",
             )
           ),
         );
@@ -84,7 +74,7 @@ class TrainingSetFormText extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return
-    Expanded( //reps
+    Expanded(
       child:Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children:<Widget>[
@@ -107,8 +97,7 @@ class TrainingSetFormText extends StatelessWidget {
     );
   }
 }
-
-class TrainingSetFormTextList extends ConsumerStatefulWidget {
+class TrainingSetFormTextWidget extends ConsumerStatefulWidget {
 
   final StateNotifierProvider<TrainingStateController, TrainingState> provider;
   final double bodyWeight;
@@ -119,7 +108,7 @@ class TrainingSetFormTextList extends ConsumerStatefulWidget {
   final int kcal;
   final double rm;
 
-  TrainingSetFormTextList(
+  TrainingSetFormTextWidget(
     {
       Key? key,
       required this.provider,
@@ -134,11 +123,11 @@ class TrainingSetFormTextList extends ConsumerStatefulWidget {
   );
 
   @override
-  TrainingSetFormTextListState createState() => TrainingSetFormTextListState();
+  TrainingSetFormTextWidgetState createState() => TrainingSetFormTextWidgetState();
 
 }
 
-class TrainingSetFormTextListState extends ConsumerState<TrainingSetFormTextList> {
+class TrainingSetFormTextWidgetState extends ConsumerState<TrainingSetFormTextWidget> {
 
   TextEditingController _weightTtextController = TextEditingController();
   TextEditingController _repsTtextController = TextEditingController();
@@ -149,15 +138,15 @@ class TrainingSetFormTextListState extends ConsumerState<TrainingSetFormTextList
   int reps = 0;
   double rm = 0;
 
-  double calculateRM(double weight, int reps) {
-    double rm = 0;
-    if(reps == 1){
-      rm = weight;
+  double calculateRM(double _weight, int _reps) {
+    double _rm = 0;
+    if(_reps == 1){
+      _rm = _weight;
     }
     else {
-      rm = (weight * (1 + (reps / 40)));
+      _rm = (_weight * (1 + (_reps / 40)));
     }
-    return rm;
+    return _rm;
   }
 
   // int interval = 0;
@@ -165,8 +154,8 @@ class TrainingSetFormTextListState extends ConsumerState<TrainingSetFormTextList
   double mets = 0;
   int kcal = 0;
 
-  double calculateKcal(int lap, double bodyWeight, double mets) {
-    return (mets * bodyWeight * (lap / 360) * 1.05);
+  double calculateKcal(int _lap, double _bodyWeight, double _mets) {
+    return (_mets * _bodyWeight * (_lap / 360) * 1.05);
   }
 
   void _updateWeight() {
@@ -235,7 +224,7 @@ class TrainingSetFormTextListState extends ConsumerState<TrainingSetFormTextList
     return
     Column(
       children: <Widget>[
-        Row( //weight reps
+        Row(
           children: [
             TrainingSetFormText(
               textController:_weightTtextController,
@@ -249,18 +238,13 @@ class TrainingSetFormTextListState extends ConsumerState<TrainingSetFormTextList
             ),
           ]
         ),
-        Row( //lap interval mets
+        Row(
           children: [
             TrainingSetFormText(
               textController:_lapTtextController,
               label: 'Lap',
               hint: 'Enter a time',
             ),
-            // TrainingSetFormText(
-            //   textController:_metsTtextController,
-            //   label: 'Interval',
-            //   hint: 'Enter a time',
-            // ),
             TrainingSetFormText(
               textController:_metsTtextController,
               label: 'Mets',
@@ -405,7 +389,8 @@ class AddBtnTrainingSetForm extends StatelessWidget {
 
 class RegistBtnTrainingSet extends StatelessWidget {
 
-  final List<TrainingSetFormTextListKey> items;
+  final int taskId;
+  final List<TrainingSetFormTextList> trainingSetFormList;
   final DateTime date;
   final int eventId;
   final dbHelper;
@@ -414,7 +399,8 @@ class RegistBtnTrainingSet extends StatelessWidget {
   RegistBtnTrainingSet(
     {
       Key? key,
-      required this.items,
+      required this.taskId,
+      required this.trainingSetFormList,
       required this.date,
       required this.eventId,
       required this.dbHelper,
@@ -427,7 +413,7 @@ class RegistBtnTrainingSet extends StatelessWidget {
     return
       ElevatedButton(
         onPressed: () async {
-          registTrainingRecodes(items, date, eventId, dbHelper, ref);
+          registTrainingRecodes(taskId,trainingSetFormList, date, eventId, dbHelper, ref);
           Navigator.pop(context);
         },
         style: ElevatedButton.styleFrom(
@@ -444,6 +430,53 @@ class RegistBtnTrainingSet extends StatelessWidget {
             SizedBox(width: 4),
           ],
         ),
+      )
+    ;
+  }
+}
+
+class EventsMenu extends ConsumerStatefulWidget {
+
+  final StateNotifierProvider<EventSelectStateController, EventSelectState> provider;
+  final List<Evnet> events;
+  int selectedEvent = 1;
+
+  EventsMenu(
+    {
+      Key? key,
+      required this.provider,
+      required this.events,
+      required this.selectedEvent,
+    }
+  );
+
+  @override
+  EventsMenuState createState() => EventsMenuState();
+
+}
+class EventsMenuState extends ConsumerState<EventsMenu> {
+
+   @override
+  void initState() {
+    super.initState();
+    // ref.read(widget.provider.notifier).modify(widget.selectedEvent);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    logger.d(widget.selectedEvent);
+    return
+      DropdownButtonFormField(
+        items: widget.events.map((event) {
+          return DropdownMenuItem(
+            value: event.id,
+            child: Text(event.name)
+          );
+        }).toList(),
+        value: widget.selectedEvent,
+        onChanged: (int? value) {
+          ref.read(widget.provider.notifier).modify(value);
+        },
       )
     ;
   }

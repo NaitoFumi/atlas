@@ -1,11 +1,10 @@
-// ignore: file_names
 import 'dart:async';
 import 'dart:developer';
 import 'dart:ffi';
 import 'dart:io';
-// import 'package:logger/logger.dart';
 import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
+import 'package:path_provider/path_provider.dart';
 
 import './logger_wrap.dart';
 import './core/structure.dart';
@@ -283,12 +282,18 @@ class TrainingDatabase {
     return _database!;
   }
 
+  Future<String> _getDatabasePath(String dbName) async {
+    Directory documentsDirectory = await getApplicationDocumentsDirectory();
+    String path = join(documentsDirectory.path, dbName);
+    return path;
+  }
+
   Future<Database> _initDB(String filePath) async {
     // logger.i("_initDB");
-    final dbPath = await getDatabasesPath();
-    final path = join(dbPath, filePath);
+    final dbPath = await _getDatabasePath(filePath);
+    logger.d(dbPath);
 
-    return await openDatabase(path, version: 1, onCreate: _createDB);
+    return await openDatabase(dbPath, version: 1, onCreate: _createDB);
   }
 
   Future<void> _createDB(Database db, int version) async {
@@ -459,6 +464,7 @@ class TrainingDatabase {
   }
 
   Future<List<TrainingSet>> getTrainingSets(int taskId) async {
+    logger.d(taskId);
     final db = await instance.database;
 
     final result = await db.query(

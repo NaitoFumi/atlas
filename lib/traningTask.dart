@@ -10,7 +10,7 @@ import './core/structure.dart';
 import './core/util.dart';
 import './trainingDb.dart';
 import './utilWidget.dart';
-import './trainingRecord.dart';
+import './trainingRegistWidget.dart';
 
 class TrainingTaskScreen extends StatefulWidget {
 
@@ -57,7 +57,7 @@ class _TrainingTaskScreenState extends State<TrainingTaskScreen> {
     int dayUnix = roundUnixTimeToDays(widget.paramDate.millisecondsSinceEpoch);
     List<BodyComposition> bodyCompositionList = await dbHelper.getBodyComposition(dayUnix);
     if (bodyCompositionList.isNotEmpty) {
-      logger.i('TrainingEvents select');
+      logger.i('BodyComposition select');
       _lastData.id = bodyCompositionList[0].id;
       _lastData.bodyWeight = bodyCompositionList[0].bodyWeight;
       _lastData.bfp = bodyCompositionList[0].bfp;
@@ -68,7 +68,7 @@ class _TrainingTaskScreenState extends State<TrainingTaskScreen> {
       _newData = _lastData;
 
     } else {
-      logger.i('Failed to select TrainingEvents');
+      logger.i('Failed to select BodyComposition');
       _lastData.id = -1;
       _lastData.date = 0;
     }
@@ -154,10 +154,10 @@ class _TrainingTaskScreenState extends State<TrainingTaskScreen> {
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (context) =>
-                  TrainingRecordScreen(
+                builder: (context) => TrainingRegistWidget(
                     paramDate: widget.paramDate,
-                    bodyWeight:double.parse(_newData.bodyWeight.toString())
+                    bodyWeight:double.parse(_newData.bodyWeight.toString()),
+                    title: "Training Task Regist",
                   )
               ),
             );
