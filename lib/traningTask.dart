@@ -130,6 +130,18 @@ class _TrainingTaskScreenState extends State<TrainingTaskScreen> {
     }
   }
 
+  List<TrainingTaskItem> tasks = [];
+  void _loadTasks() async {
+    logger.d("loadTasks");
+    Map _taskList = {};
+    _taskList = await loadTrainigTasks(dbHelper, widget.paramDate, widget.paramDate);
+    if (_taskList.containsKey(widget.paramDate)) {
+      setState(() {
+        tasks = _taskList[widget.paramDate]!;
+      });
+    }
+  }
+
   @override
   void initState() {
     super.initState();
@@ -137,6 +149,7 @@ class _TrainingTaskScreenState extends State<TrainingTaskScreen> {
     _bodyWeightTextController.addListener(_updateWeight);
     _bfpTextController.addListener(_updateBfp);
     strDate = dateFormat.format(widget.paramDate);
+    _loadTasks();
   }
 
   @override
@@ -149,9 +162,9 @@ class _TrainingTaskScreenState extends State<TrainingTaskScreen> {
         width: 80,
         height: 80,
         child: FloatingActionButton(
-          onPressed: () {
+          onPressed: () async {
             _insertBodyComposition();
-            Navigator.push(
+            await Navigator.push(
               context,
               MaterialPageRoute(
                 builder: (context) => TrainingRegistWidget(
@@ -161,6 +174,7 @@ class _TrainingTaskScreenState extends State<TrainingTaskScreen> {
                   )
               ),
             );
+            _loadTasks();
           },
           child: const Icon( Icons.add_task, color: Colors.white, size: 60, ),
         ),
@@ -169,7 +183,7 @@ class _TrainingTaskScreenState extends State<TrainingTaskScreen> {
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: <Widget>[
-            Expanded( //weight
+            Expanded(
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: <Widget>[
@@ -191,7 +205,7 @@ class _TrainingTaskScreenState extends State<TrainingTaskScreen> {
                 ],
               ),
             ),
-            Expanded( //weight
+            Expanded(
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: <Widget>[
@@ -223,12 +237,12 @@ class _TrainingTaskScreenState extends State<TrainingTaskScreen> {
                       shrinkWrap: true,
                       itemBuilder: (BuildContext context, int index){
                         return TrainingTaskList(
-                          trainingTaskItem:widget.trainingTaskList[index],
+                          trainingTaskItem:tasks[index],
                           bodyWeight: _newData.bodyWeight,
                           paramDate: widget.paramDate,
                         );
                       },
-                      itemCount: widget.trainingTaskList.length,
+                      itemCount: tasks.length,
                     ),
                   ),
                 ],

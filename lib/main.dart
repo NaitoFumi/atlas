@@ -44,7 +44,10 @@ class _CalendarScreenState extends State<CalendarScreen> {
   late DateTime _selectedDay;
   final dbHelper = TrainingDatabase.instance;
   // Map<DateTime, List<TrainingTaskItem>> _eventsList = {};
-  Map _events = {};
+  Map _events = LinkedHashMap<DateTime, List>(
+    equals: isSameDay,
+    hashCode: getHashCode,
+  );
   final DateTime _firstDay = DateTime.utc(2020, 1, 1);
   final DateTime _lastDay = DateTime.utc(2030, 12, 31);
 
@@ -52,45 +55,22 @@ class _CalendarScreenState extends State<CalendarScreen> {
   void initState() {
     super.initState();
     _selectedDay = _focusedDay;
-    _loadTrainigTasksForMonths(_focusedDay);
+    loadEvent(dbHelper,_focusedDay);
   }
 
-  void _loadTrainigTasksForMonths(DateTime date) async {
-    DateTime startDate = _focusedDay.subtract(const Duration(days: 31));
-    DateTime endDate = _focusedDay.add(const Duration(days: 31));
-    Map<DateTime, List<TrainingTaskItem>> _eventsList = {};
-    for (DateTime date = startDate; date.isBefore(endDate); date = date.add(const Duration(days: 1))) {
-      List<TrainingTaskItem> taskList = await dbHelper.getTrainingTasks(roundUnixTimeToDays(date.millisecondsSinceEpoch));
-      if (taskList.isNotEmpty) {
-        // logger.i('TrainingTask select');
-        for (TrainingTaskItem task in taskList) {
-          DateTime taskDay = DateTime.fromMillisecondsSinceEpoch(task.date);
-          if(_eventsList[taskDay] == null){
-            _eventsList[taskDay] = [];
-          }
-          _eventsList[taskDay]!.add(task);
-        }
-      } else {
-        // logger.i('Failed to select TrainingTask');
-      }
-    }
+  void loadEvent(TrainingDatabase dbHelper, DateTime dateTime) async {
+    DateTime startDate = dateTime.subtract(const Duration(days: 31));
+    DateTime endDate = dateTime.add(const Duration(days: 31));
+    Map _eventsList = await loadTrainigTasks(dbHelper, startDate, endDate);
     if(_eventsList.isNotEmpty){
       setState(() {
-        _events = LinkedHashMap<DateTime, List>(
-          equals: isSameDay,
-          hashCode: getHashCode,
-        )..addAll(_eventsList);
+        _events = _eventsList;
       });
     }
   }
 
   List<TrainingTaskItem> _getEventForDay(DateTime date) {
     return _events[date] ?? [];
-  }
-
-  //To assign a digit to each unit so that they do not cover each other
-  int getHashCode(DateTime key) {
-    return key.day * 1000000 + key.month * 10000 + key.year;
   }
 
   @override
@@ -127,7 +107,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
             },
             onPageChanged: (focusedDay) {
               _focusedDay = focusedDay;
-              _loadTrainigTasksForMonths(_focusedDay);
+              loadEvent(dbHelper,_focusedDay);
             },
             eventLoader: _getEventForDay,
           ),
@@ -138,8 +118,8 @@ class _CalendarScreenState extends State<CalendarScreen> {
               children: _getEventForDay(_selectedDay).map(
                 (event) => ListTile(
                   title: Text(event.eventName),
-                  onTap: () {
-                    Navigator.push(
+                  onTap: () async {
+                    await Navigator.push(
                       context,
                       MaterialPageRoute(
                         builder: (context) => TrainingTaskScreen(
@@ -159,7 +139,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
-                Expanded(child: RegistTrainingTaskBtn(selectDay: _selectedDay, trainingTaskList:_getEventForDay(_selectedDay))),
+                Expanded(child: RegistTrainingTaskBtn(selectDay: _selectedDay, trainingTaskList:_getEventForDay(_selectedDay),dbHelper: dbHelper,callBackFunc: loadEvent,)),
                 const SizedBox(width: 16),
                 Expanded(child: StaticBtn()),
               ],

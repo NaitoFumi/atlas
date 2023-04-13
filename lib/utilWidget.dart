@@ -33,6 +33,7 @@ class TrainingTaskList extends StatefulWidget {
 class _TrainingTaskList extends State<TrainingTaskList> {
   @override
   Widget build(BuildContext context) {
+    logger.d(widget.trainingTaskItem);
     return
     ListTile(
       leading: Icon(Icons.add_a_photo),
@@ -200,6 +201,7 @@ class TrainingSetFormTextWidgetState extends ConsumerState<TrainingSetFormTextWi
     mets   = widget.mets;
     kcal   = widget.kcal;
     rm     = widget.rm;
+    // _weightTtextController.text = widget.reps.toString();
     _weightTtextController.text = widget.weight.toString();
     _repsTtextController.text   = widget.reps.toString();
     _lapTtextController.text    = widget.lap.toString();
@@ -227,12 +229,12 @@ class TrainingSetFormTextWidgetState extends ConsumerState<TrainingSetFormTextWi
         Row(
           children: [
             TrainingSetFormText(
-              textController:_weightTtextController,
+              textController:_repsTtextController,
               label: 'Reps',
               hint: 'Enter a number',
             ),
             TrainingSetFormText(
-              textController:_repsTtextController,
+              textController:_weightTtextController,
               label: 'Weight',
               hint: 'Enter a number',
             ),
@@ -269,12 +271,16 @@ class RegistTrainingTaskBtn extends StatelessWidget {
 
   final DateTime selectDay;
   final List<TrainingTaskItem> trainingTaskList;
+  final TrainingDatabase dbHelper;
+  final Function(TrainingDatabase,DateTime) callBackFunc;
 
   RegistTrainingTaskBtn(
     {
       Key? key,
       required this.selectDay,
       required this.trainingTaskList,
+      required this.dbHelper,
+      required this.callBackFunc,
     }
   );
 
@@ -282,8 +288,8 @@ class RegistTrainingTaskBtn extends StatelessWidget {
   Widget build(BuildContext context) {
     return
       ElevatedButton(
-        onPressed: () {
-          Navigator.push(
+        onPressed: () async {
+          await Navigator.push(
             context,
             MaterialPageRoute(
               builder: (context) =>
@@ -293,6 +299,7 @@ class RegistTrainingTaskBtn extends StatelessWidget {
               )
             ),
           );
+          callBackFunc(dbHelper,selectDay);
         },
         style: ElevatedButton.styleFrom(
           backgroundColor: Colors.blue,
@@ -464,7 +471,6 @@ class EventsMenuState extends ConsumerState<EventsMenu> {
 
   @override
   Widget build(BuildContext context) {
-    logger.d(widget.selectedEvent);
     return
       DropdownButtonFormField(
         items: widget.events.map((event) {

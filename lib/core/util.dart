@@ -1,3 +1,6 @@
+import 'dart:collection';
+import 'package:table_calendar/table_calendar.dart';
+
 import '../logger_wrap.dart';
 import '../utilWidget.dart';
 import '../trainingDb.dart';
@@ -8,6 +11,38 @@ int roundUnixTimeToDays(int unixTime) {
   int days = unixTime ~/ 86400000;
   int roundedUnixTime = days * 86400000;
   return roundedUnixTime;
+}
+
+//To assign a digit to each unit so that they do not cover each other
+int getHashCode(DateTime key) {
+  return key.day * 1000000 + key.month * 10000 + key.year;
+}
+
+Future<Map> loadTrainigTasks(TrainingDatabase dbHelper, DateTime startDate, DateTime endDate) async {
+
+  Map<DateTime, List<TrainingTaskItem>> _eventsList = {};
+  Map _events = {};
+
+  for (DateTime date = startDate; date.isBefore(endDate) || date.isAtSameMomentAs(endDate); date = date.add(const Duration(days: 1))) {
+    List<TrainingTaskItem> taskList = await dbHelper.getTrainingTasks(roundUnixTimeToDays(date.millisecondsSinceEpoch));
+    if (taskList.isNotEmpty) {
+      // logger.i('TrainingTask select');
+      for (TrainingTaskItem task in taskList) {
+        DateTime taskDay = DateTime.fromMillisecondsSinceEpoch(task.date);
+        if(_eventsList[taskDay] == null){
+          _eventsList[taskDay] = [];
+        }
+        _eventsList[taskDay]!.add(task);
+      }
+    } else {
+      // logger.i('Failed to select TrainingTask');
+    }
+  }
+   _events = LinkedHashMap<DateTime, List>(
+      equals: isSameDay,
+      hashCode: getHashCode,
+    )..addAll(_eventsList);
+  return _events;
 }
 
 Future<bool> registTrainingRecodes(int taskId, List<TrainingSetFormTextList> items, DateTime date, int eventId, TrainingDatabase dbHelper, ref ) async {
