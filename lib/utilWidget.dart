@@ -10,6 +10,7 @@ import 'core/util.dart';
 import './trainingDb.dart';
 import './traningTask.dart';
 import './trainingRegistWidget.dart';
+import './eventSettingScreen.dart';
 
 class TrainingTaskList extends StatefulWidget {
 
@@ -33,7 +34,6 @@ class TrainingTaskList extends StatefulWidget {
 class _TrainingTaskList extends State<TrainingTaskList> {
   @override
   Widget build(BuildContext context) {
-    logger.d(widget.trainingTaskItem);
     return
     ListTile(
       leading: Icon(Icons.add_a_photo),
@@ -42,7 +42,6 @@ class _TrainingTaskList extends State<TrainingTaskList> {
         Navigator.push(
           context,
           MaterialPageRoute(
-            // builder: (context) => TrainingEditScreen(
             builder: (context) => TrainingRegistWidget(
               task:       widget.trainingTaskItem,
               bodyWeight: widget.bodyWeight,
@@ -104,10 +103,8 @@ class TrainingSetFormTextWidget extends ConsumerStatefulWidget {
   final double bodyWeight;
   final double weight;
   final int reps;
-  final int lap;
-  final double mets;
-  final int kcal;
   final double rm;
+  final Function(double bodyWeight, double weight, int reps, double rm) onPressedCallback;
 
   TrainingSetFormTextWidget(
     {
@@ -116,10 +113,8 @@ class TrainingSetFormTextWidget extends ConsumerStatefulWidget {
       required this.bodyWeight,
       required this.weight,
       required this.reps,
-      required this.lap,
-      required this.mets,
-      required this.kcal,
       required this.rm,
+      required this.onPressedCallback,
     }
   );
 
@@ -132,8 +127,6 @@ class TrainingSetFormTextWidgetState extends ConsumerState<TrainingSetFormTextWi
 
   TextEditingController _weightTtextController = TextEditingController();
   TextEditingController _repsTtextController = TextEditingController();
-  TextEditingController _lapTtextController = TextEditingController();
-  TextEditingController _metsTtextController = TextEditingController();
 
   double weight = 0;
   int reps = 0;
@@ -150,21 +143,12 @@ class TrainingSetFormTextWidgetState extends ConsumerState<TrainingSetFormTextWi
     return _rm;
   }
 
-  // int interval = 0;
-  int lap = 0;
-  double mets = 0;
-  int kcal = 0;
-
-  double calculateKcal(int _lap, double _bodyWeight, double _mets) {
-    return (_mets * _bodyWeight * (_lap / 360) * 1.05);
-  }
-
   void _updateWeight() {
     if(_weightTtextController.text.isNotEmpty){
       setState(() {
         weight = double.parse(_weightTtextController.text);
         rm = calculateRM(weight, reps);
-        ref.read(widget.provider.notifier).modify(weight,mets,reps,lap,rm,kcal);
+        ref.read(widget.provider.notifier).modify(weight,reps,rm);
       });
     }
   }
@@ -173,22 +157,8 @@ class TrainingSetFormTextWidgetState extends ConsumerState<TrainingSetFormTextWi
       setState(() {
         reps = int.parse(_repsTtextController.text);
         rm = calculateRM(weight, reps);
-        ref.read(widget.provider.notifier).modify(weight,mets,reps,lap,rm,kcal);
+        ref.read(widget.provider.notifier).modify(weight,reps,rm);
       });
-    }
-  }
-  void _updateLap() {
-    if(_lapTtextController.text.isNotEmpty) {
-      lap = int.parse(_lapTtextController.text);
-      kcal = calculateKcal(lap, widget.bodyWeight, mets).toInt();
-      ref.read(widget.provider.notifier).modify(weight,mets,reps,lap,rm,kcal);
-    }
-  }
-  void _updateMets(){
-    if(_metsTtextController.text.isNotEmpty) {
-      mets = double.parse(_metsTtextController.text);
-      kcal = calculateKcal(lap, widget.bodyWeight, mets).toInt();
-      ref.read(widget.provider.notifier).modify(weight,mets,reps,lap,rm,kcal);
     }
   }
 
@@ -197,32 +167,24 @@ class TrainingSetFormTextWidgetState extends ConsumerState<TrainingSetFormTextWi
     super.initState();
     weight = widget.weight;
     reps   = widget.reps;
-    lap    = widget.lap;
-    mets   = widget.mets;
-    kcal   = widget.kcal;
     rm     = widget.rm;
-    // _weightTtextController.text = widget.reps.toString();
     _weightTtextController.text = widget.weight.toString();
     _repsTtextController.text   = widget.reps.toString();
-    _lapTtextController.text    = widget.lap.toString();
-    _metsTtextController.text   = widget.mets.toString();
     _weightTtextController.addListener(_updateWeight);
     _repsTtextController.addListener(_updateReps);
-    _lapTtextController.addListener(_updateLap);
-    _metsTtextController.addListener(_updateMets);
   }
 
   @override
   void dispose() {
     _weightTtextController.dispose();
     _repsTtextController.dispose();
-    _lapTtextController.dispose();
-    _metsTtextController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    // logger.d(widget.weight);
+    // logger.d(widget.reps);
     return
     Column(
       children: <Widget>[
@@ -238,21 +200,14 @@ class TrainingSetFormTextWidgetState extends ConsumerState<TrainingSetFormTextWi
               label: 'Weight',
               hint: 'Enter a number',
             ),
+            CopyTrainingSetBtn(
+              bodyWeight: widget.bodyWeight,
+              weight:     weight,
+              reps:       reps,
+              rm:         rm,
+              onPressedCallback: widget.onPressedCallback,
+            )
           ]
-        ),
-        Row(
-          children: [
-            TrainingSetFormText(
-              textController:_lapTtextController,
-              label: 'Lap',
-              hint: 'Enter a time',
-            ),
-            TrainingSetFormText(
-              textController:_metsTtextController,
-              label: 'Mets',
-              hint: 'Enter a number',
-            ),
-          ],
         ),
         Column( //rm
           children: [
@@ -264,6 +219,52 @@ class TrainingSetFormTextWidgetState extends ConsumerState<TrainingSetFormTextWi
         ),
       ]
     );
+  }
+}
+
+class CopyTrainingSetBtn extends StatelessWidget {
+
+  final double bodyWeight;
+  final double weight;
+  final int reps;
+  final double rm;
+  final Function(double bodyWeight, double weight, int reps, double rm) onPressedCallback;
+
+  CopyTrainingSetBtn(
+    {
+      Key? key,
+      required this.bodyWeight,
+      required this.weight,
+      required this.reps,
+      required this.rm,
+      required this.onPressedCallback,
+    }
+  );
+
+  @override
+  Widget build(BuildContext context) {
+    return
+      ElevatedButton(
+        onPressed: () async {
+          logger.d(weight);
+          logger.d(reps);
+          onPressedCallback(bodyWeight, weight, reps, rm);
+        },
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Colors.blue,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(24),
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: const [
+            Icon( Icons.add_task, color: Colors.white, size: 35,),
+          ],
+        ),
+      )
+    ;
   }
 }
 
@@ -359,12 +360,14 @@ class StaticBtn extends StatelessWidget {
 
 class AddBtnTrainingSetForm extends StatelessWidget {
 
-  final Function() onPressedCallback;
+  final Function(double bodyWeight, double weight, int reps, double rm) onPressedCallback;
+  final double bodyWeight;
 
   AddBtnTrainingSetForm(
     {
       Key? key,
       required this.onPressedCallback,
+      required this.bodyWeight,
     }
   );
 
@@ -373,7 +376,7 @@ class AddBtnTrainingSetForm extends StatelessWidget {
     return
       ElevatedButton(
         onPressed: () async {
-          onPressedCallback();
+          onPressedCallback(bodyWeight, 0, 0, 0);
         },
         style: ElevatedButton.styleFrom(
           backgroundColor: Colors.blue,
@@ -445,7 +448,7 @@ class RegistBtnTrainingSet extends StatelessWidget {
 class EventsMenu extends ConsumerStatefulWidget {
 
   final StateNotifierProvider<EventSelectStateController, EventSelectState> provider;
-  final List<Evnet> events;
+  final List<Event> events;
   int selectedEvent = 1;
 
   EventsMenu(
@@ -466,7 +469,6 @@ class EventsMenuState extends ConsumerState<EventsMenu> {
    @override
   void initState() {
     super.initState();
-    // ref.read(widget.provider.notifier).modify(widget.selectedEvent);
   }
 
   @override
@@ -481,8 +483,57 @@ class EventsMenuState extends ConsumerState<EventsMenu> {
         }).toList(),
         value: widget.selectedEvent,
         onChanged: (int? value) {
-          ref.read(widget.provider.notifier).modify(value);
+          if (value != null) {
+            ref.read(widget.provider.notifier).modify(value);
+          }
         },
+      )
+    ;
+  }
+}
+
+class EventSettingBtn extends StatelessWidget {
+
+  final TrainingDatabase dbHelper;
+  final Function() onPressedCallback;
+
+
+  EventSettingBtn(
+    {
+      Key? key,
+      required this.dbHelper,
+      required this.onPressedCallback,
+    }
+  );
+
+  @override
+  Widget build(BuildContext context) {
+    return
+      ElevatedButton(
+        onPressed: () async {
+          await Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) =>
+              EventRegistWidget(dbHelper: dbHelper)
+            ),
+          );
+          onPressedCallback();
+        },
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Colors.blue,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(24),
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: const [
+            Icon(Icons.settings, color: Colors.white),
+            SizedBox(width: 4),
+          ],
+        ),
       )
     ;
   }

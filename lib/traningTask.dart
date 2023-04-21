@@ -33,10 +33,9 @@ class TrainingTaskScreen extends StatefulWidget {
 class _TrainingTaskScreenState extends State<TrainingTaskScreen> {
 
   final dbHelper = TrainingDatabase.instance;
-  List<Evnet> eventsList = [];
+  List<Event> eventsList = [];
   final TextEditingController _bodyWeightTextController = TextEditingController();
   final TextEditingController _bfpTextController = TextEditingController();
-  double _bmr = 0;
   BodyComposition _lastData = BodyComposition (
     id: -1,
     bfp: 0,
@@ -57,19 +56,18 @@ class _TrainingTaskScreenState extends State<TrainingTaskScreen> {
     int dayUnix = roundUnixTimeToDays(widget.paramDate.millisecondsSinceEpoch);
     List<BodyComposition> bodyCompositionList = await dbHelper.getBodyComposition(dayUnix);
     if (bodyCompositionList.isNotEmpty) {
-      logger.i('BodyComposition select');
-      _lastData.id = bodyCompositionList[0].id;
-      _lastData.bodyWeight = bodyCompositionList[0].bodyWeight;
-      _lastData.bfp = bodyCompositionList[0].bfp;
-      _lastData.date = bodyCompositionList[0].date;
-      _bmr = _calculateBMR(_lastData.bodyWeight, _lastData.bfp);
+      // logger.i('BodyComposition select');
+      _lastData.id                   = bodyCompositionList[0].id;
+      _lastData.bodyWeight           = bodyCompositionList[0].bodyWeight;
+      _lastData.bfp                  = bodyCompositionList[0].bfp;
+      _lastData.date                 = bodyCompositionList[0].date;
       _bodyWeightTextController.text = _lastData.bodyWeight.toString();
-      _bfpTextController.text = _lastData.bfp.toString();
-      _newData = _lastData;
+      _bfpTextController.text        = _lastData.bfp.toString();
+      _newData                       = _lastData;
 
     } else {
-      logger.i('Failed to select BodyComposition');
-      _lastData.id = -1;
+      // logger.i('Failed to select BodyComposition');
+      _lastData.id   = -1;
       _lastData.date = 0;
     }
   }
@@ -106,17 +104,10 @@ class _TrainingTaskScreenState extends State<TrainingTaskScreen> {
     }
   }
 
-  double _calculateBMR(double bodyWeight, double btmRate) {
-    double lbm = bodyWeight * (1 - btmRate);
-    double bmr = 370 + (21.6 * lbm);
-    return bmr;
-  }
-
   void _updateWeight() {
     if(_bodyWeightTextController.text.isNotEmpty){
       setState(() {
         _newData.bodyWeight = double.parse(_bodyWeightTextController.text);
-        _bmr = _calculateBMR(_newData.bodyWeight, _newData.bfp);
       });
     }
   }
@@ -125,14 +116,12 @@ class _TrainingTaskScreenState extends State<TrainingTaskScreen> {
     if(_bfpTextController.text.isNotEmpty) {
       setState(() {
         _newData.bfp = double.parse(_bfpTextController.text);
-        _bmr = _calculateBMR(_newData.bodyWeight, _newData.bfp);
       });
     }
   }
 
   List<TrainingTaskItem> tasks = [];
   void _loadTasks() async {
-    logger.d("loadTasks");
     Map _taskList = {};
     _taskList = await loadTrainigTasks(dbHelper, widget.paramDate, widget.paramDate);
     if (_taskList.containsKey(widget.paramDate)) {
@@ -183,8 +172,9 @@ class _TrainingTaskScreenState extends State<TrainingTaskScreen> {
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: <Widget>[
-            Expanded(
-              child: Row(
+            // Expanded(
+              // child: Row(
+              Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: <Widget>[
                   Expanded(
@@ -202,13 +192,6 @@ class _TrainingTaskScreenState extends State<TrainingTaskScreen> {
                       ),
                     ),
                   ),
-                ],
-              ),
-            ),
-            Expanded(
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: <Widget>[
                   Expanded(
                     child: TextFormField(
                       controller: _bfpTextController,
@@ -226,10 +209,10 @@ class _TrainingTaskScreenState extends State<TrainingTaskScreen> {
                   ),
                 ],
               ),
-            ),
-            Text(_bmr.toString()),
-            Expanded(
-              child: Row(
+            // ),
+            // Expanded(
+              // child: Row(
+              Row(
                 children: [
                   Expanded(
                     child: ListView.builder(
@@ -247,7 +230,7 @@ class _TrainingTaskScreenState extends State<TrainingTaskScreen> {
                   ),
                 ],
               ),
-            ),
+            // ),
           ],
         ),
       ),

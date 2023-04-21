@@ -43,7 +43,6 @@ class _CalendarScreenState extends State<CalendarScreen> {
   CalendarFormat _calendarFormat = CalendarFormat.month;
   late DateTime _selectedDay;
   final dbHelper = TrainingDatabase.instance;
-  // Map<DateTime, List<TrainingTaskItem>> _eventsList = {};
   Map _events = LinkedHashMap<DateTime, List>(
     equals: isSameDay,
     hashCode: getHashCode,

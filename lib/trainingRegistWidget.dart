@@ -26,7 +26,6 @@ class TrainingRegistWidget extends ConsumerStatefulWidget {
     ) : super(key: key);
 
   @override
-  // ignore: library_private_types_in_public_api
   _TrainingRegistWidgetState createState() => _TrainingRegistWidgetState();
 }
 class _TrainingRegistWidgetState extends ConsumerState<TrainingRegistWidget> {
@@ -34,9 +33,14 @@ class _TrainingRegistWidgetState extends ConsumerState<TrainingRegistWidget> {
   final dbHelper = TrainingDatabase.instance;
 
   // Data fields
-  List<Evnet> events = [];
+  int selectedEvent = defEvent;
+  List<Event> events = [];
   void _getEventList() async {
-     events = await dbHelper.getEvents();
+    List<Event> _events = await dbHelper.getEvents();
+    setState(() {
+      events = _events;
+      logger.d(events);
+    });
   }
 
   List<TrainingSet> _sets =[];
@@ -45,54 +49,34 @@ class _TrainingRegistWidgetState extends ConsumerState<TrainingRegistWidget> {
   List<TrainingSetFormTextList> _list = <TrainingSetFormTextList>[];
 
   void _getTrainingSetList(int taskId) async {
-    logger.d(taskId);
      _sets= await dbHelper.getTrainingSets(taskId);
-    logger.d(_sets);
-
-    final StateNotifierProvider<TrainingStateController, TrainingState> trainingProvider = StateNotifierProvider<TrainingStateController, TrainingState>((ref) => TrainingStateController());
-
     for (final set in _sets)
     {
-      _list.add(
-        TrainingSetFormTextList(
-          index:    ++index,
-          provider: trainingProvider,
-          setId:    set.id!,
-          widget:   TrainingSetFormTextWidget(
-            provider:   trainingProvider,
-            bodyWeight: widget.bodyWeight,
-            weight:     set.weight,
-            reps:       set.reps,
-            lap:        set.lapTime,
-            mets:       set.mets,
-            kcal:       set.kcal,
-            rm:         set.rm,
-          ),
-        )
-      );
+      addWidgetList(widget.bodyWeight, set.weight, set.reps, set.rm, setId:set.id!);
     }
-    setState(() {
-      _items = _list;
-    });
   }
 
-  void addWidgetList() {
-    final StateNotifierProvider<TrainingStateController, TrainingState> trainingProvider = StateNotifierProvider<TrainingStateController, TrainingState>((ref) => TrainingStateController());
+  void addWidgetList(double bodyWeight, double weight, int reps, double rm, {int setId = 0}) {
+
+    final StateNotifierProvider<TrainingStateController, TrainingState> trainingProvider =
+      StateNotifierProvider<TrainingStateController, TrainingState>((ref) => TrainingStateController(
+        weight: weight,
+        reps:   reps,
+        rm:     rm,
+      ));
 
     _list.add(
       TrainingSetFormTextList(
         index:    ++index,
         provider: trainingProvider,
-        setId:    0,
+        setId:    setId,
         widget:   TrainingSetFormTextWidget(
           provider:   trainingProvider,
-          bodyWeight: widget.bodyWeight,
-          weight:     0,
-          reps:       0,
-          lap:        0,
-          mets:       0,
-          kcal:       0,
-          rm:         0,
+          bodyWeight: bodyWeight,
+          weight:     weight,
+          reps:       reps,
+          rm:         rm,
+          onPressedCallback: addWidgetList,
         ),
       )
     );
@@ -103,8 +87,9 @@ class _TrainingRegistWidgetState extends ConsumerState<TrainingRegistWidget> {
 
   int paramTaskId = 0;
 
-  int selectedEvent = defEvent;
   final StateNotifierProvider<EventSelectStateController, EventSelectState> eventSelectProvider = StateNotifierProvider<EventSelectStateController, EventSelectState>((ref) => EventSelectStateController());
+
+  TextEditingController _metsTtextController = TextEditingController();
 
   @override
   void initState() {
@@ -130,11 +115,19 @@ class _TrainingRegistWidgetState extends ConsumerState<TrainingRegistWidget> {
             Row(
               children: [
                 Expanded(
+                  flex: 4,
                   child: EventsMenu(
-                    events: events,
-                    selectedEvent: selectedEvent,
-                    provider: eventSelectProvider,
+                    events:             events,
+                    selectedEvent:      selectedEvent,
+                    provider:           eventSelectProvider,
                   ),
+                ),
+                Expanded(
+                  flex: 1,
+                  child: EventSettingBtn(
+                    dbHelper:            dbHelper,
+                    onPressedCallback: _getEventList,
+                  )
                 ),
               ],
             ),
@@ -154,7 +147,7 @@ class _TrainingRegistWidgetState extends ConsumerState<TrainingRegistWidget> {
                 const Spacer(),
                 Expanded(
                   flex: 1,
-                  child: AddBtnTrainingSetForm(onPressedCallback: addWidgetList,)
+                  child: AddBtnTrainingSetForm(onPressedCallback: addWidgetList, bodyWeight: widget.bodyWeight,)
                 ),
                 const Spacer(),
                 Expanded(

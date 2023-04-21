@@ -38,28 +38,24 @@ class BodyComposition {
     'bfp': bfp,
   };
 }
-class Evnet {
+class Event {
   int? id;
   String name;
-  double defMets;
 
-  Evnet({
+  Event({
     this.id,
     required this.name,
-    required this.defMets,
   });
 
-  factory Evnet.fromJson(Map<String, dynamic> json) {
-    return Evnet(
+  factory Event.fromJson(Map<String, dynamic> json) {
+    return Event(
       id: json['id'] as int,
       name: json['name'] as String,
-      defMets: json['defMets'] as double,
     );
   }
   Map<String, dynamic> toJson() => {
     'id': id,
     'name': name,
-    'defMets': defMets,
   };
 }
 
@@ -93,10 +89,6 @@ class TrainingSet {
   int trainingTaskId;
   double weight;
   int reps;
-  int lapTime;
-  int intervalTime;
-  double mets;
-  int kcal;
   double rm;
 
   TrainingSet({
@@ -104,10 +96,6 @@ class TrainingSet {
     required this.trainingTaskId,
     required this.weight,
     required this.reps,
-    required this.lapTime,
-    required this.intervalTime,
-    required this.mets,
-    required this.kcal,
     required this.rm,
   });
 
@@ -117,10 +105,6 @@ class TrainingSet {
       trainingTaskId: json['trainingTaskId'] as int,
       weight: json['weight'] as double,
       reps: json['reps'] as int,
-      lapTime: json['lapTime'] as int,
-      intervalTime: json['intervalTime'] as int,
-      mets: json['mets'] as double,
-      kcal: json['kcal'] as int,
       rm: json['rm'] as double,
     );
   }
@@ -129,10 +113,6 @@ class TrainingSet {
     'trainingTaskId': trainingTaskId,
     'weight': weight,
     'reps': reps,
-    'lapTime': lapTime,
-    'intervalTime': intervalTime,
-    'mets': mets,
-    'kcal': kcal,
     'rm': rm,
   };
 }
@@ -234,18 +214,12 @@ class RotineSet {
   int routineITaskd;
   double weight;
   int reps;
-  int lapTime;
-  int intervalTime;
-  double mets;
 
   RotineSet({
     this.id,
     required this.routineITaskd,
     required this.weight,
     required this.reps,
-    required this.lapTime,
-    required this.intervalTime,
-    required this.mets,
   });
   factory RotineSet.fromJson(Map<String, dynamic> json) {
     return RotineSet(
@@ -253,9 +227,6 @@ class RotineSet {
       routineITaskd: json['routineITaskd'] as int,
       weight: json['weight'] as double,
       reps: json['reps'] as int,
-      lapTime: json['lapTime'] as int,
-      intervalTime: json['intervalTime'] as int,
-      mets: json['mets'] as double,
     );
   }
   Map<String, dynamic> toJson() => {
@@ -263,9 +234,6 @@ class RotineSet {
     'routineITaskd': routineITaskd,
     'weight': weight,
     'reps': reps,
-    'lapTime': lapTime,
-    'intervalTime': intervalTime,
-    'mets': mets,
   };
 }
 
@@ -308,17 +276,15 @@ class TrainingDatabase {
     await db.execute('''
       CREATE TABLE event(
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        name TEXT NOT NULL,
-        defMets REAL NOT NULL
+        name TEXT NOT NULL
       )
     ''');
     await db.rawQuery('''
-      INSERT INTO event (name, defMets)
+      INSERT INTO event (name)
       VALUES
-       ('Running', 8.0),
-       ('Squat', 6.0),
-       ('Dead Lift', 6.0),
-       ('Bench Press', 3.0)
+       ('Squat'),
+       ('Dead Lift'),
+       ('Bench Press')
     ''');
     await db.execute('''
       CREATE TABLE training_task(
@@ -334,10 +300,6 @@ class TrainingDatabase {
         trainingTaskId INTEGER NOT NULL,
         weight REAL NOT NULL,
         reps INTEGER NOT NULL,
-        lapTime INTEGER NOT NULL,
-        intervalTime INTEGER NOT NULL,
-        mets REAL NOT NULL,
-        kcal INTEGER NOT NULL,
         rm REAL NOT NULL,
         FOREIGN KEY(trainingTaskId) REFERENCES training_task(id) ON DELETE CASCADE
       )
@@ -378,9 +340,6 @@ class TrainingDatabase {
         routineITaskd INTEGER NOT NULL,
         weight REAL NOT NULL,
         reps INTEGER NOT NULL,
-        lapTime INTEGER NOT NULL,
-        intervalTime INTEGER NOT NULL,
-        mets REAL NOT NULL,
         FOREIGN KEY(routineITaskd) REFERENCES routine_task(id) ON DELETE CASCADE
       )
     ''');
@@ -411,13 +370,18 @@ class TrainingDatabase {
     );
   }
 
-  Future<List<Evnet>> getEvents() async {
+  Future<List<Event>> getEvents() async {
     // logger.i("getEvents");
     final db = await instance.database;
     final result = await db.rawQuery(
       'SELECT * FROM event'
     );
-    return result.map((json) => Evnet.fromJson(json)).toList();
+    return result.map((json) => Event.fromJson(json)).toList();
+  }
+
+  Future<int> insertEvents(Event event) async {
+    final db = await instance.database;
+    return await db.insert('event', event.toJson());
   }
 
   Future<List<TrainingTaskItem>> getTrainingTasks(int day) async {
@@ -426,8 +390,7 @@ class TrainingDatabase {
       '''
         SELECT
           training_task.*,
-          event.name AS eventName,
-          event.defMets AS eventDefMets
+          event.name AS eventName
         FROM training_task
         JOIN event ON training_task.eventId = event.id
         WHERE
@@ -439,7 +402,6 @@ class TrainingDatabase {
   }
 
   Future<int> insertTrainingTask(TrainingTask task) async {
-    logger.d(task);
     final db = await instance.database;
     return await db.insert('training_task', task.toJson());
   }
@@ -464,9 +426,7 @@ class TrainingDatabase {
   }
 
   Future<List<TrainingSet>> getTrainingSets(int taskId) async {
-    logger.d(taskId);
     final db = await instance.database;
-
     final result = await db.query(
       'training_set',
       where: 'trainingTaskId = ?',
