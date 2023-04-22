@@ -37,24 +37,31 @@ class CalendarScreen extends StatefulWidget {
 }
 class _CalendarScreenState extends State<CalendarScreen> {
 
-  // This function is used to listen to the date changes.
-  void onSelectedDate(DateTime dateTime) {}
-  DateTime _focusedDay = DateTime.now();
-  CalendarFormat _calendarFormat = CalendarFormat.month;
-  late DateTime _selectedDay;
   final dbHelper = TrainingDatabase.instance;
+  late DateTime _selectedDay;
+  DateTime _focusedDay = DateTime.now();
+  final DateTime _firstDay = DateTime.utc(2020, 1, 1);
+  final DateTime _lastDay = DateTime.utc(2030, 12, 31);
+  CalendarFormat _calendarFormat = CalendarFormat.month;
+
   Map _events = LinkedHashMap<DateTime, List>(
     equals: isSameDay,
     hashCode: getHashCode,
   );
-  final DateTime _firstDay = DateTime.utc(2020, 1, 1);
-  final DateTime _lastDay = DateTime.utc(2030, 12, 31);
 
+  // This function is used to listen to the date changes.
+  void onSelectedDate(DateTime dateTime) {}
+
+  bool isFirstLogin = true;
   @override
   void initState() {
     super.initState();
+    isFirstLogin = true;
     _selectedDay = _focusedDay;
     loadEvent(dbHelper,_focusedDay);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      tranzitionToTrainingTaskScreen(_focusedDay, _getEventForDay(_focusedDay));
+    });
   }
 
   void loadEvent(TrainingDatabase dbHelper, DateTime dateTime) async {
@@ -72,80 +79,97 @@ class _CalendarScreenState extends State<CalendarScreen> {
     return _events[date] ?? [];
   }
 
+  void tranzitionToTrainingTaskScreen(DateTime selectedDate, List<TrainingTaskItem> trainingTaskList) async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => TrainingTaskScreen(
+          paramDate: selectedDate,
+          trainingTaskList: trainingTaskList,
+        ),
+      ),
+    );
+    isFirstLogin = false;
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text("Calendar"),
-      ),
-      body: Column(
-        mainAxisAlignment: MainAxisAlignment.start,
-        children: [
-          TableCalendar(
-            firstDay: _firstDay,
-            lastDay: _lastDay,
-            focusedDay: _focusedDay,
-            calendarFormat: _calendarFormat,
-            onFormatChanged: (format) {
-              if (_calendarFormat != format) {
-                setState(() {
-                  _calendarFormat = format;
-                });
-              }
-            },
-            selectedDayPredicate: (day) {
-              return isSameDay(_selectedDay, day);
-            },
-            onDaySelected: (selectedDay, focusedDay) {
-              if (!isSameDay(_selectedDay, selectedDay)) {
-                setState(() {
-                  _selectedDay = selectedDay;
-                  _focusedDay = focusedDay;
-                });
-              }
-            },
-            onPageChanged: (focusedDay) {
-              _focusedDay = focusedDay;
-              loadEvent(dbHelper,_focusedDay);
-            },
-            eventLoader: _getEventForDay,
-          ),
-          SizedBox(
-            height: 300,
-            child: ListView(
-              shrinkWrap: true,
-              children: _getEventForDay(_selectedDay).map(
-                (event) => ListTile(
-                  title: Text(event.eventName),
-                  onTap: () async {
-                    await Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => TrainingTaskScreen(
-                          paramDate: _selectedDay,
-                          trainingTaskList: _getEventForDay(_selectedDay),
-                        )
-                      ),
-                    );
-                  },
+    return
+      Scaffold(
+        appBar: AppBar(
+          title: const Text("Calendar"),
+        ),
+        body: Column(
+          mainAxisAlignment: MainAxisAlignment.start,
+          children: [
+            TableCalendar(
+              firstDay: _firstDay,
+              lastDay: _lastDay,
+              focusedDay: _focusedDay,
+              calendarFormat: _calendarFormat,
+              onFormatChanged: (format) {
+                if (_calendarFormat != format) {
+                  setState(() {
+                    _calendarFormat = format;
+                  });
+                }
+              },
+              selectedDayPredicate: (day) {
+                return isSameDay(_selectedDay, day);
+              },
+              onDaySelected: (selectedDay, focusedDay) {
+                if (!isSameDay(_selectedDay, selectedDay)) {
+                  setState(() {
+                    _selectedDay = selectedDay;
+                    _focusedDay = focusedDay;
+                  });
+                }
+              },
+              onPageChanged: (focusedDay) {
+                _focusedDay = focusedDay;
+                loadEvent(dbHelper,_focusedDay);
+              },
+              eventLoader: _getEventForDay,
+            ),
+            SizedBox(
+              height: 300,
+              child: ListView(
+                shrinkWrap: true,
+                children: _getEventForDay(_selectedDay).map(
+                  (event) => ListTile(
+                    title: Text(event.eventName),
+                    onTap: () async {
+                      tranzitionToTrainingTaskScreen(_selectedDay, _getEventForDay(_selectedDay));
+                      loadEvent(dbHelper,_focusedDay);
+                    },
+                  )
                 )
-              )
-              .toList(),
+                .toList(),
+              ),
             ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                Expanded(child: RegistTrainingTaskBtn(selectDay: _selectedDay, trainingTaskList:_getEventForDay(_selectedDay),dbHelper: dbHelper,callBackFunc: loadEvent,)),
-                const SizedBox(width: 16),
-                Expanded(child: StaticBtn()),
-              ],
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  Expanded(
+                    child: RegistTrainingTaskBtn(
+                      selectDay: _selectedDay,
+                      trainingTaskList:_getEventForDay(_selectedDay),
+                      dbHelper: dbHelper,
+                      onPressdFunc: tranzitionToTrainingTaskScreen,
+                      callBackFunc: loadEvent,
+                    )
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: StaticBtn()
+                  ),
+                ],
+              ),
             ),
-          ),
-        ]
-      )
-    );
+          ]
+        ),
+      );
   }
 }

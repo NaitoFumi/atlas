@@ -273,6 +273,7 @@ class RegistTrainingTaskBtn extends StatelessWidget {
   final DateTime selectDay;
   final List<TrainingTaskItem> trainingTaskList;
   final TrainingDatabase dbHelper;
+  final Function(DateTime,  List<TrainingTaskItem>) onPressdFunc;
   final Function(TrainingDatabase,DateTime) callBackFunc;
 
   RegistTrainingTaskBtn(
@@ -281,6 +282,7 @@ class RegistTrainingTaskBtn extends StatelessWidget {
       required this.selectDay,
       required this.trainingTaskList,
       required this.dbHelper,
+      required this.onPressdFunc,
       required this.callBackFunc,
     }
   );
@@ -290,16 +292,7 @@ class RegistTrainingTaskBtn extends StatelessWidget {
     return
       ElevatedButton(
         onPressed: () async {
-          await Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) =>
-              TrainingTaskScreen(
-                paramDate: selectDay,
-                trainingTaskList: trainingTaskList,
-              )
-            ),
-          );
+          onPressdFunc(selectDay, trainingTaskList);
           callBackFunc(dbHelper,selectDay);
         },
         style: ElevatedButton.styleFrom(
