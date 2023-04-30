@@ -35,11 +35,11 @@ class _TrainingRegistWidgetState extends ConsumerState<TrainingRegistWidget> {
   // Data fields
   int selectedEvent = defEvent;
   List<Event> events = [];
+
   void _getEventList() async {
     List<Event> _events = await dbHelper.getEvents();
     setState(() {
       events = _events;
-      logger.d(events);
     });
   }
 
@@ -99,6 +99,12 @@ class _TrainingRegistWidgetState extends ConsumerState<TrainingRegistWidget> {
       paramTaskId = widget.task!.id;
       _getTrainingSetList(paramTaskId);
       selectedEvent = widget.task!.eventId;
+      logger.d(_items);
+    }
+    else {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        addWidgetList(widget.bodyWeight, 0, 0, 0);
+      });
     }
   }
 
@@ -117,9 +123,9 @@ class _TrainingRegistWidgetState extends ConsumerState<TrainingRegistWidget> {
                 Expanded(
                   flex: 4,
                   child: EventsMenu(
-                    events:             events,
-                    selectedEvent:      selectedEvent,
-                    provider:           eventSelectProvider,
+                    dbHelper:      dbHelper,
+                    selectedEvent: selectedEvent,
+                    provider:      eventSelectProvider,
                   ),
                 ),
                 Expanded(
@@ -136,6 +142,7 @@ class _TrainingRegistWidgetState extends ConsumerState<TrainingRegistWidget> {
               scrollDirection: Axis.vertical,
               shrinkWrap: true,
               itemBuilder: (BuildContext context, int index){
+                logger.d(_items);
                 return _items[index].widget;
               },
               itemCount: _items.length,
@@ -147,7 +154,11 @@ class _TrainingRegistWidgetState extends ConsumerState<TrainingRegistWidget> {
                 const Spacer(),
                 Expanded(
                   flex: 1,
-                  child: AddBtnTrainingSetForm(onPressedCallback: addWidgetList, bodyWeight: widget.bodyWeight,)
+                  child:
+                    AddBtnTrainingSetForm(
+                      onPressedCallback: addWidgetList,
+                      bodyWeight: widget.bodyWeight,
+                    )
                 ),
                 const Spacer(),
                 Expanded(

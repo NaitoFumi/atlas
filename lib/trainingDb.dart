@@ -138,19 +138,47 @@ class Tag {
   };
 }
 
-class TagTask {
+class TagEvent {
   int? id;
+  int tagId;
+  int eventId;
+
+  TagEvent({
+    this.id,
+    required this.tagId,
+    required this.eventId
+  });
+
+  factory TagEvent.fromJson(Map<String, dynamic> json) {
+    return TagEvent(
+      id: json['id'] as int,
+      tagId: json['tagId'] as int,
+      eventId: json['eventId'] as int,
+    );
+  }
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'tagId': tagId,
+    'eventId': eventId,
+  };
+}
+
+class TagEventName {
+  int? id;
+  String name;
   int tagId;
   int trainingTaskId;
 
-  TagTask({
+  TagEventName({
     this.id,
+    required this.name,
     required this.tagId,
     required this.trainingTaskId
   });
 
-  factory TagTask.fromJson(Map<String, dynamic> json) {
-    return TagTask(
+  factory TagEventName.fromJson(Map<String, dynamic> json) {
+    return TagEventName(
+      name: json['name'] as String,
       id: json['id'] as int,
       tagId: json['tagId'] as int,
       trainingTaskId: json['trainingTaskId'] as int,
@@ -158,6 +186,7 @@ class TagTask {
   }
   Map<String, dynamic> toJson() => {
     'id': id,
+    'name': name,
     'tagId': tagId,
     'trainingTaskId': trainingTaskId,
   };
@@ -311,12 +340,12 @@ class TrainingDatabase {
       )
     ''');
     await db.execute('''
-      CREATE TABLE tag_task(
+      CREATE TABLE tag_event(
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         tagId INTEGER NOT NULL,
-        trainingTaskId INTEGER NOT NULL,
+        eventId INTEGER NOT NULL,
         FOREIGN KEY(tagId) REFERENCES tag(id) ON DELETE CASCADE,
-        FOREIGN KEY(trainingTaskId) REFERENCES training_task(id) ON DELETE CASCADE
+        FOREIGN KEY(eventId) REFERENCES event(id) ON DELETE CASCADE
       )
     ''');
     await db.execute('''
@@ -435,11 +464,13 @@ class TrainingDatabase {
 
     return result.map((json) => TrainingSet.fromJson(json)).toList();
   }
+
   Future<int> insertTrainingSet(TrainingSet set) async {
     final db = await instance.database;
 
     return await db.insert('training_set', set.toJson());
   }
+
   Future<int> updateTrainingSet(TrainingSet set) async {
     final db = await instance.database;
     return await db.update(
@@ -449,6 +480,7 @@ class TrainingDatabase {
       whereArgs: [set.id],
     );
   }
+
   Future<int> deleteTrainingSet(int id) async {
     final db = await instance.database;
     return await db.delete(
@@ -463,6 +495,7 @@ class TrainingDatabase {
     final result = await db.query('tag');
     return result.map((json) => Tag.fromJson(json)).toList();
   }
+
   Future<int> insertTag(Tag tag) async {
     final db = await instance.database;
     return await db.insert('tag', tag.toJson());
@@ -485,32 +518,42 @@ class TrainingDatabase {
     );
   }
 
-  Future<List<TagTask>> getTaskTag(int taskId) async {
+  Future<List<TagEventName>> getTagEventByEventId(int taskId) async {
     final db = await instance.database;
-    final result = await db.query(
-      'tag_task',
-      where: 'task_id = ?',
-      whereArgs: [taskId],
+    final result = await db.rawQuery(
+      '''
+        SELECT
+          tag_event.*,
+          tag.name AS tagName
+        FROM tag_event
+        JOIN tag ON tag_event.eventId = event.id
+        WHERE
+          tag_event.eventId = ?
+      ''',
+      [taskId],
     );
-    return result.map((json) => TagTask.fromJson(json)).toList();
+    return result.map((json) => TagEventName.fromJson(json)).toList();
   }
-  Future<int> insertTaskTag(TagTask tag_task) async {
+
+  Future<int> insertTagEvent(TagEvent tag_event) async {
     final db = await instance.database;
-    return await db.insert('tag_task', tag_task.toJson());
+    return await db.insert('tag_event', tag_event.toJson());
   }
-  Future<int> updateTaskTag(TagTask tag_task) async {
+
+  Future<int> updateTagEvent(TagEvent tag_event) async {
     final db = await instance.database;
     return await db.update(
-      'tag_task',
-      tag_task.toJson(),
+      'tag_event',
+      tag_event.toJson(),
       where: 'id = ?',
-      whereArgs: [tag_task.id],
+      whereArgs: [tag_event.id],
     );
   }
-  Future<int> deleteTaskTag(int id) async {
+
+  Future<int> deleteTagEvent(int id) async {
     final db = await instance.database;
     return await db.delete(
-      'tag_task',
+      'tag_event',
       where: 'id = ?',
       whereArgs: [id],
     );

@@ -9,7 +9,7 @@ import './logger_wrap.dart';
 import './core/structure.dart';
 import './core/util.dart';
 import './utilWidget.dart';
-import './traningTask.dart';
+import 'traningTaskScreen.dart';
 import './trainingDb.dart';
 
 void main() => runApp(

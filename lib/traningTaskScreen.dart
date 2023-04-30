@@ -5,12 +5,12 @@ import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:logger/logger.dart';
 
-import './logger_wrap.dart';
-import './core/structure.dart';
-import './core/util.dart';
-import './trainingDb.dart';
-import './utilWidget.dart';
-import './trainingRegistWidget.dart';
+import 'logger_wrap.dart';
+import 'core/structure.dart';
+import 'core/util.dart';
+import 'trainingDb.dart';
+import 'utilWidget.dart';
+import 'trainingRegistWidget.dart';
 
 class TrainingTaskScreen extends StatefulWidget {
 
@@ -157,8 +157,8 @@ class _TrainingTaskScreenState extends State<TrainingTaskScreen> {
               context,
               MaterialPageRoute(
                 builder: (context) => TrainingRegistWidget(
-                    paramDate: widget.paramDate,
                     bodyWeight:double.parse(_newData.bodyWeight.toString()),
+                    paramDate: widget.paramDate,
                     title: "Training Task Regist",
                   )
               ),

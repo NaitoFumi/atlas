@@ -4,13 +4,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import './logger_wrap.dart';
+import 'logger_wrap.dart';
 import 'core/structure.dart';
 import 'core/util.dart';
-import './trainingDb.dart';
-import './traningTask.dart';
-import './trainingRegistWidget.dart';
-import './eventSettingScreen.dart';
+import 'trainingDb.dart';
+import 'traningTaskScreen.dart';
+import 'trainingRegistWidget.dart';
+import 'eventScreen.dart';
 
 class TrainingTaskList extends StatefulWidget {
 
@@ -396,7 +396,7 @@ class RegistBtnTrainingSet extends StatelessWidget {
   final List<TrainingSetFormTextList> trainingSetFormList;
   final DateTime date;
   final int eventId;
-  final dbHelper;
+  final TrainingDatabase dbHelper;
   final ref;
 
   RegistBtnTrainingSet(
@@ -440,15 +440,17 @@ class RegistBtnTrainingSet extends StatelessWidget {
 
 class EventsMenu extends ConsumerStatefulWidget {
 
+  final TrainingDatabase dbHelper;
   final StateNotifierProvider<EventSelectStateController, EventSelectState> provider;
-  final List<Event> events;
+  // final List<Event> events;
   int selectedEvent = 1;
 
   EventsMenu(
     {
       Key? key,
+      required this.dbHelper,
       required this.provider,
-      required this.events,
+      // required this.events,
       required this.selectedEvent,
     }
   );
@@ -459,27 +461,108 @@ class EventsMenu extends ConsumerStatefulWidget {
 }
 class EventsMenuState extends ConsumerState<EventsMenu> {
 
+  TextEditingController _textEditingController = TextEditingController();
+  int _selectedEventId = 0;
+
    @override
   void initState() {
     super.initState();
+    _getEventList(widget.dbHelper);
+    _selectedEventId = widget.selectedEvent;
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
+  }
+
+  int selectedEvent = defEvent;
+  List<Event> events = [];
+  void _getEventList(TrainingDatabase dbHelper,) async {
+    List<Event> _events = await dbHelper.getEvents();
+    setState(() {
+      events = _events;
+      Event _event = Event(id: 0, name: "Custom Event");
+      events.insert(0, _event);
+      // logger.d(events);
+    });
+  }
+
+  int insertedEventId = 0;
+  void _registEvent(
+    TrainingDatabase dbHelper,
+    String eventName
+  ) async {
+    Event event = Event(name: eventName);
+    insertedEventId = await dbHelper.insertEvents(event);
+    if (insertedEventId > 0) {
+      logger.i('Event insert with setId: $insertedEventId');
+    } else {
+      logger.i('Failed to insert Event');
+      insertedEventId = widget.selectedEvent;
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return
-      DropdownButtonFormField(
-        items: widget.events.map((event) {
-          return DropdownMenuItem(
-            value: event.id,
-            child: Text(event.name)
-          );
-        }).toList(),
-        value: widget.selectedEvent,
-        onChanged: (int? value) {
-          if (value != null) {
-            ref.read(widget.provider.notifier).modify(value);
-          }
-        },
+      Column(
+        children: [
+          DropdownButton<int>(
+            hint: Text('Select an Event'),
+            value: _selectedEventId,
+            onChanged: (int? value) {
+              if (value == 0) {
+                showDialog(
+                  context: context,
+                  builder: (context) => AlertDialog(
+                    title: const Text('Enter custom Event'),
+                    content: TextField(
+                      controller: _textEditingController,
+                    ),
+                    actions: [
+                      TextButton(
+                        onPressed: () {
+                          Navigator.pop(context);
+                          setState(() {
+                            _registEvent(widget.dbHelper,_textEditingController.text);
+                            _getEventList(widget.dbHelper);
+                            _selectedEventId = insertedEventId;
+                          });
+                          _textEditingController.clear();
+                        },
+                        child: const Text('Add'),
+                      ),
+                      TextButton(
+                        onPressed: () {
+                          Navigator.pop(context);
+                        },
+                        child: const Text('Cancel'),
+                      ),
+                    ],
+                  ),
+                );
+              } else {
+                setState(() {
+                  _selectedEventId = value ?? 0;
+                });
+              }
+            },
+            items: events.map((evnet) {
+              return DropdownMenuItem(
+                value: evnet.id,
+                child:
+                  Row(
+                    children: [
+                      Text(evnet.name),
+                    ],
+                  ),
+              );
+            }).toList(),
+          ),
+          SizedBox(height: 16),
+          Text('Selected Event: $_selectedEventId'),
+        ],
       )
     ;
   }
@@ -508,7 +591,7 @@ class EventSettingBtn extends StatelessWidget {
             context,
             MaterialPageRoute(
               builder: (context) =>
-              EventRegistWidget(dbHelper: dbHelper)
+              EventScreen(dbHelper: dbHelper)
             ),
           );
           onPressedCallback();
