@@ -99,7 +99,6 @@ class _TrainingRegistWidgetState extends ConsumerState<TrainingRegistWidget> {
       paramTaskId = widget.task!.id;
       _getTrainingSetList(paramTaskId);
       selectedEvent = widget.task!.eventId;
-      logger.d(_items);
     }
     else {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -142,7 +141,6 @@ class _TrainingRegistWidgetState extends ConsumerState<TrainingRegistWidget> {
               scrollDirection: Axis.vertical,
               shrinkWrap: true,
               itemBuilder: (BuildContext context, int index){
-                logger.d(_items);
                 return _items[index].widget;
               },
               itemCount: _items.length,

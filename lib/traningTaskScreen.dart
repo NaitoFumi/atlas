@@ -74,7 +74,7 @@ class _TrainingTaskScreenState extends State<TrainingTaskScreen> {
 
   void _insertBodyComposition() async {
     if (_lastData.id == -1) {
-    int dayUnix = roundUnixTimeToDays(widget.paramDate.millisecondsSinceEpoch);
+      int dayUnix = roundUnixTimeToDays(widget.paramDate.millisecondsSinceEpoch);
       BodyComposition registData = BodyComposition (
         bfp: _newData.bfp,
         bodyWeight: _newData.bodyWeight,
@@ -121,6 +121,7 @@ class _TrainingTaskScreenState extends State<TrainingTaskScreen> {
   }
 
   List<TrainingTaskItem> tasks = [];
+
   void _loadTasks() async {
     Map _taskList = {};
     _taskList = await loadTrainigTasks(dbHelper, widget.paramDate, widget.paramDate);
@@ -172,65 +173,56 @@ class _TrainingTaskScreenState extends State<TrainingTaskScreen> {
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: <Widget>[
-            // Expanded(
-              // child: Row(
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: <Widget>[
-                  Expanded(
-                    child: TextFormField(
-                      controller: _bodyWeightTextController,
-                      keyboardType: TextInputType.number,
-                      inputFormatters: <TextInputFormatter>[
-                        FilteringTextInputFormatter.digitsOnly // Only numbers can be entered
-                      ],
-                      decoration: const InputDecoration(
-                        hintText: 'Enter a number',
-                        border: OutlineInputBorder(),
-                        labelText: "Body Weight",
-                        suffix: Text('kg'),
-                      ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: <Widget>[
+                Expanded(
+                  child: TextFormField(
+                    controller:      _bodyWeightTextController,
+                    keyboardType:    TextInputType.number,
+                    inputFormatters: <TextInputFormatter>[FilteringTextInputFormatter.digitsOnly],
+                    decoration:      const InputDecoration(
+                      hintText:      'Enter a number',
+                      border:        OutlineInputBorder(),
+                      labelText:     "Body Weight",
+                      suffix:        Text('kg'),
                     ),
                   ),
-                  Expanded(
-                    child: TextFormField(
-                      controller: _bfpTextController,
-                      keyboardType: TextInputType.number,
-                      inputFormatters: <TextInputFormatter>[
-                        FilteringTextInputFormatter.digitsOnly // Only numbers can be entered
-                      ],
-                      decoration: const InputDecoration(
-                        hintText: 'Enter a number',
-                        border: OutlineInputBorder(),
-                        labelText: "Body Fat Percentage",
-                        suffix: Text('%'),
-                      ),
+                ),
+                Expanded(
+                  child: TextFormField(
+                    controller:      _bfpTextController,
+                    keyboardType:    TextInputType.number,
+                    inputFormatters: <TextInputFormatter>[FilteringTextInputFormatter.digitsOnly],
+                    decoration:      const InputDecoration(
+                      hintText:      'Enter a number',
+                      border:        OutlineInputBorder(),
+                      labelText:     "Body Fat Percentage",
+                      suffix:        Text('%'),
                     ),
                   ),
-                ],
-              ),
-            // ),
-            // Expanded(
-              // child: Row(
-              Row(
-                children: [
-                  Expanded(
-                    child: ListView.builder(
-                      scrollDirection: Axis.vertical,
-                      shrinkWrap: true,
-                      itemBuilder: (BuildContext context, int index){
-                        return TrainingTaskList(
-                          trainingTaskItem:tasks[index],
-                          bodyWeight: _newData.bodyWeight,
-                          paramDate: widget.paramDate,
-                        );
-                      },
-                      itemCount: tasks.length,
-                    ),
+                ),
+              ],
+            ),
+            Row(
+              children: [
+                Expanded(
+                  child: ListView.builder(
+                    scrollDirection: Axis.vertical,
+                    shrinkWrap: true,
+                    itemBuilder: (BuildContext context, int index){
+                      return TrainingTaskList(
+                        trainingTaskItem: tasks[index],
+                        bodyWeight:       _newData.bodyWeight,
+                        paramDate:        widget.paramDate,
+                        callBackFunc:     _loadTasks,
+                      );
+                    },
+                    itemCount: tasks.length,
                   ),
-                ],
-              ),
-            // ),
+                ),
+              ],
+            ),
           ],
         ),
       ),

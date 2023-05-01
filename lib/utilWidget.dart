@@ -17,6 +17,7 @@ class TrainingTaskList extends StatefulWidget {
   final TrainingTaskItem trainingTaskItem;
   final double bodyWeight;
   final DateTime paramDate;
+  final Function() callBackFunc;
 
   TrainingTaskList(
     {
@@ -24,6 +25,7 @@ class TrainingTaskList extends StatefulWidget {
       required this.trainingTaskItem,
       required this.bodyWeight,
       required this.paramDate,
+      required this.callBackFunc,
     }
   );
 
@@ -38,8 +40,8 @@ class _TrainingTaskList extends State<TrainingTaskList> {
     ListTile(
       leading: Icon(Icons.add_a_photo),
       title: Text("${widget.trainingTaskItem.eventName}"),
-      onTap: (){
-        Navigator.push(
+      onTap: () async {
+        await Navigator.push(
           context,
           MaterialPageRoute(
             builder: (context) => TrainingRegistWidget(
@@ -50,6 +52,7 @@ class _TrainingTaskList extends State<TrainingTaskList> {
             )
           ),
         );
+        widget.callBackFunc();
       },
     )
     ;
@@ -183,8 +186,6 @@ class TrainingSetFormTextWidgetState extends ConsumerState<TrainingSetFormTextWi
 
   @override
   Widget build(BuildContext context) {
-    // logger.d(widget.weight);
-    // logger.d(widget.reps);
     return
     Column(
       children: <Widget>[
@@ -209,7 +210,7 @@ class TrainingSetFormTextWidgetState extends ConsumerState<TrainingSetFormTextWi
             )
           ]
         ),
-        Column( //rm
+        Column(
           children: [
             Text(
               '1RM = ${rm.toStringAsFixed(1)} kg',
@@ -442,15 +443,13 @@ class EventsMenu extends ConsumerStatefulWidget {
 
   final TrainingDatabase dbHelper;
   final StateNotifierProvider<EventSelectStateController, EventSelectState> provider;
-  // final List<Event> events;
-  int selectedEvent = 1;
+  final int selectedEvent;
 
   EventsMenu(
     {
       Key? key,
       required this.dbHelper,
       required this.provider,
-      // required this.events,
       required this.selectedEvent,
     }
   );
@@ -484,7 +483,6 @@ class EventsMenuState extends ConsumerState<EventsMenu> {
       events = _events;
       Event _event = Event(id: 0, name: "Custom Event");
       events.insert(0, _event);
-      // logger.d(events);
     });
   }
 
@@ -528,6 +526,7 @@ class EventsMenuState extends ConsumerState<EventsMenu> {
                             _registEvent(widget.dbHelper,_textEditingController.text);
                             _getEventList(widget.dbHelper);
                             _selectedEventId = insertedEventId;
+                            ref.read(widget.provider.notifier).modify(_selectedEventId);
                           });
                           _textEditingController.clear();
                         },
@@ -545,6 +544,7 @@ class EventsMenuState extends ConsumerState<EventsMenu> {
               } else {
                 setState(() {
                   _selectedEventId = value ?? 0;
+                  ref.read(widget.provider.notifier).modify(_selectedEventId);
                 });
               }
             },
@@ -561,7 +561,6 @@ class EventsMenuState extends ConsumerState<EventsMenu> {
             }).toList(),
           ),
           SizedBox(height: 16),
-          Text('Selected Event: $_selectedEventId'),
         ],
       )
     ;

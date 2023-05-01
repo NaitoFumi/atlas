@@ -63,12 +63,25 @@ Future<bool> registTrainingRecodes(int taskId, List<TrainingSetFormTextList> ite
       return false;
     }
   }
+  else {
+    TrainingTask task = TrainingTask(
+      id: _taskId,
+      date: dayUnix,
+      eventId: eventId
+    );
+    _taskId = await dbHelper.updateTrainingTask(task);
+    if (_taskId > 0) {
+      logger.i('TrainingTask updated with taskId: $_taskId');
+    } else {
+      logger.i('Failed to updated TrainingTask');
+      return false;
+    }
+  }
 
   for (TrainingSetFormTextList item in items) {
     double weight = ref.watch(item.provider).weight;
     int reps = ref.watch(item.provider).reps;
     double rm = ref.watch(item.provider).rm;
-    logger.d(item);
     if (item.setId != 0) {
       if(reps != 0 || weight != 0) {
         TrainingSet set = TrainingSet(

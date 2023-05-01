@@ -90,6 +90,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
       ),
     );
     isFirstLogin = false;
+    loadEvent(dbHelper,_focusedDay);
   }
 
   @override
