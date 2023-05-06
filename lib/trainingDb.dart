@@ -167,13 +167,13 @@ class TagEventName {
   int? id;
   String name;
   int tagId;
-  int trainingTaskId;
+  int eventId;
 
   TagEventName({
     this.id,
     required this.name,
     required this.tagId,
-    required this.trainingTaskId
+    required this.eventId
   });
 
   factory TagEventName.fromJson(Map<String, dynamic> json) {
@@ -181,14 +181,14 @@ class TagEventName {
       name: json['name'] as String,
       id: json['id'] as int,
       tagId: json['tagId'] as int,
-      trainingTaskId: json['trainingTaskId'] as int,
+      eventId: json['eventId'] as int,
     );
   }
   Map<String, dynamic> toJson() => {
     'id': id,
     'name': name,
     'tagId': tagId,
-    'trainingTaskId': trainingTaskId,
+    'eventId': eventId,
   };
 }
 
@@ -305,7 +305,7 @@ class TrainingDatabase {
     await db.execute('''
       CREATE TABLE event(
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        name TEXT NOT NULL
+        name TEXT NOT NULL UNIQUE
       )
     ''');
     await db.rawQuery('''
@@ -320,7 +320,8 @@ class TrainingDatabase {
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         date INTEGER NOT NULL,
         eventId INTEGER NOT NULL,
-        FOREIGN KEY(eventId) REFERENCES evnet(id) ON DELETE CASCADE
+        FOREIGN KEY(eventId) REFERENCES evnet(id) ON DELETE CASCADE,
+        UNIQUE(date, eventId)
       )
     ''');
     await db.execute('''
@@ -336,8 +337,19 @@ class TrainingDatabase {
     await db.execute('''
       CREATE TABLE tag(
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        name TEXT NOT NULL
+        name TEXT NOT NULL UNIQUE
       )
+    ''');
+    await db.rawQuery('''
+      INSERT INTO tag (name)
+      VALUES
+       ('Chest'),
+       ('Back'),
+       ('Legs'),
+       ('Shoulder'),
+       ('Arm'),
+       ('Pull'),
+       ('Push')
     ''');
     await db.execute('''
       CREATE TABLE tag_event(
@@ -345,7 +357,8 @@ class TrainingDatabase {
         tagId INTEGER NOT NULL,
         eventId INTEGER NOT NULL,
         FOREIGN KEY(tagId) REFERENCES tag(id) ON DELETE CASCADE,
-        FOREIGN KEY(eventId) REFERENCES event(id) ON DELETE CASCADE
+        FOREIGN KEY(eventId) REFERENCES event(id) ON DELETE CASCADE,
+        UNIQUE(tagId, eventId)
       )
     ''');
     await db.execute('''
@@ -386,17 +399,38 @@ class TrainingDatabase {
   Future<int> insertBodyComposition(BodyComposition data) async {
     // logger.i("insertBodyComposition");
     final db = await instance.database;
-    return await db.insert('body_composition', data.toJson());
+    int id = 0;
+    try {
+      id = await db.insert('body_composition', data.toJson());
+    } on DatabaseException catch (e) {
+      logger.e("DatabaseException: $e");
+      id = 0;
+    } catch (e) {
+      logger.e("Other exception: $e");
+      id = 0;
+    }
+    return id;
   }
 
   Future<int> updateBodyComposition(BodyComposition data) async {
     final db = await instance.database;
-    return await db.update(
-      'body_composition',
-      data.toJson(),
-      where: 'id = ?',
-      whereArgs: [data.id],
-    );
+    int _result_id = 0;
+    try {
+      _result_id =
+        await db.update(
+          'body_composition',
+          data.toJson(),
+          where: 'id = ?',
+          whereArgs: [data.id],
+        );
+    } on DatabaseException catch (e) {
+      logger.e("DatabaseException: $e");
+      _result_id = 0;
+    } catch (e) {
+      logger.e("Other exception: $e");
+      _result_id = 0;
+    }
+    return _result_id;
   }
 
   Future<List<Event>> getEvents() async {
@@ -410,7 +444,17 @@ class TrainingDatabase {
 
   Future<int> insertEvents(Event event) async {
     final db = await instance.database;
-    return await db.insert('event', event.toJson());
+    int _result_id = 0;
+    try {
+      _result_id = await db.insert('event', event.toJson());
+    } on DatabaseException catch (e) {
+      logger.e("DatabaseException: $e");
+      _result_id = 0;
+    } catch (e) {
+      logger.e("Other exception: $e");
+      _result_id = 0;
+    }
+    return _result_id;
   }
 
   Future<List<TrainingTaskItem>> getTrainingTasks(int day) async {
@@ -432,26 +476,58 @@ class TrainingDatabase {
 
   Future<int> insertTrainingTask(TrainingTask task) async {
     final db = await instance.database;
-    return await db.insert('training_task', task.toJson());
+    int _result_id = 0;
+    try {
+      _result_id = await db.insert('training_task', task.toJson());
+    } on DatabaseException catch (e) {
+      logger.e("DatabaseException: $e");
+      _result_id = 0;
+    } catch (e) {
+      logger.e("Other exception: $e");
+      _result_id = 0;
+    }
+    return _result_id;
   }
 
   Future<int> updateTrainingTask(TrainingTask task) async {
     final db = await instance.database;
-    return await db.update(
-      'training_task',
-      task.toJson(),
-      where: 'id = ?',
-      whereArgs: [task.id],
-    );
+    int _result_id = 0;
+    try {
+      _result_id =
+        await db.update(
+          'training_task',
+          task.toJson(),
+          where: 'id = ?',
+          whereArgs: [task.id],
+        );
+    } on DatabaseException catch (e) {
+      logger.e("DatabaseException: $e");
+      _result_id = 0;
+    } catch (e) {
+      logger.e("Other exception: $e");
+      _result_id = 0;
+    }
+    return _result_id;
   }
 
   Future<int> deleteTrainingTask(int id) async {
     final db = await instance.database;
-    return await db.delete(
-      'training_task',
-      where: 'id = ?',
-      whereArgs: [id],
-    );
+    int _result_id = 0;
+    try {
+      _result_id =
+        await db.delete(
+          'training_task',
+          where: 'id = ?',
+          whereArgs: [id],
+        );
+    } on DatabaseException catch (e) {
+      logger.e("DatabaseException: $e");
+      _result_id = 0;
+    } catch (e) {
+      logger.e("Other exception: $e");
+      _result_id = 0;
+    }
+    return _result_id;
   }
 
   Future<List<TrainingSet>> getTrainingSets(int taskId) async {
@@ -467,27 +543,58 @@ class TrainingDatabase {
 
   Future<int> insertTrainingSet(TrainingSet set) async {
     final db = await instance.database;
-
-    return await db.insert('training_set', set.toJson());
+    int _result_id = 0;
+    try {
+      _result_id = await db.insert('training_set', set.toJson());
+    } on DatabaseException catch (e) {
+      logger.e("DatabaseException: $e");
+      _result_id = 0;
+    } catch (e) {
+      logger.e("Other exception: $e");
+      _result_id = 0;
+    }
+    return _result_id;
   }
 
   Future<int> updateTrainingSet(TrainingSet set) async {
     final db = await instance.database;
-    return await db.update(
-      'training_set',
-      set.toJson(),
-      where: 'id = ?',
-      whereArgs: [set.id],
-    );
+    int _result_id = 0;
+    try {
+      _result_id =
+        await db.update(
+          'training_set',
+          set.toJson(),
+          where: 'id = ?',
+          whereArgs: [set.id],
+        );
+    } on DatabaseException catch (e) {
+      logger.e("DatabaseException: $e");
+      _result_id = 0;
+    } catch (e) {
+      logger.e("Other exception: $e");
+      _result_id = 0;
+    }
+    return _result_id;
   }
 
   Future<int> deleteTrainingSet(int id) async {
     final db = await instance.database;
-    return await db.delete(
-      'training_set',
-      where: 'id = ?',
-      whereArgs: [id],
-    );
+    int _result_id = 0;
+    try {
+      _result_id =
+        await db.delete(
+          'training_set',
+          where: 'id = ?',
+          whereArgs: [id],
+        );
+    } on DatabaseException catch (e) {
+      logger.e("DatabaseException: $e");
+      _result_id = 0;
+    } catch (e) {
+      logger.e("Other exception: $e");
+      _result_id = 0;
+    }
+    return _result_id;
   }
 
   Future<List<Tag>> getTag() async {
@@ -498,64 +605,131 @@ class TrainingDatabase {
 
   Future<int> insertTag(Tag tag) async {
     final db = await instance.database;
-    return await db.insert('tag', tag.toJson());
-  }
-  Future<int> updateTag(Tag tag) async {
-    final db = await instance.database;
-    return await db.update(
-      'tag',
-      tag.toJson(),
-      where: 'id = ?',
-      whereArgs: [tag.id],
-    );
-  }
-  Future<int> deleteTag(int id) async {
-    final db = await instance.database;
-    return await db.delete(
-      'tag',
-      where: 'id = ?',
-      whereArgs: [id],
-    );
+    int _result_id = 0;
+    try {
+      _result_id = await db.insert('tag', tag.toJson());
+    } on DatabaseException catch (e) {
+      logger.e("DatabaseException: $e");
+      _result_id = 0;
+    } catch (e) {
+      logger.e("Other exception: $e");
+      _result_id = 0;
+    }
+    return _result_id;
   }
 
-  Future<List<TagEventName>> getTagEventByEventId(int taskId) async {
+  Future<int> updateTag(Tag tag) async {
+    final db = await instance.database;
+    int _result_id = 0;
+    try {
+      _result_id =
+        await db.update(
+          'tag',
+          tag.toJson(),
+          where: 'id = ?',
+          whereArgs: [tag.id],
+        );
+    } on DatabaseException catch (e) {
+      logger.e("DatabaseException: $e");
+      _result_id = 0;
+    } catch (e) {
+      logger.e("Other exception: $e");
+      _result_id = 0;
+    }
+    return _result_id;
+  }
+
+  Future<int> deleteTag(int id) async {
+    final db = await instance.database;
+    int _result_id = 0;
+    try {
+      _result_id =
+        await db.delete(
+          'tag',
+          where: 'id = ?',
+          whereArgs: [id],
+        );
+    } on DatabaseException catch (e) {
+      logger.e("DatabaseException: $e");
+      _result_id = 0;
+    } catch (e) {
+      logger.e("Other exception: $e");
+      _result_id = 0;
+    }
+    return _result_id;
+  }
+
+  Future<List<TagEventName>> getTagEventByEventId(int eventId) async {
     final db = await instance.database;
     final result = await db.rawQuery(
       '''
         SELECT
           tag_event.*,
-          tag.name AS tagName
+          tag.name AS name
         FROM tag_event
-        JOIN tag ON tag_event.eventId = event.id
+        JOIN tag ON tag_event.tagId = tag.id
         WHERE
           tag_event.eventId = ?
       ''',
-      [taskId],
+      [eventId],
     );
     return result.map((json) => TagEventName.fromJson(json)).toList();
   }
 
   Future<int> insertTagEvent(TagEvent tag_event) async {
     final db = await instance.database;
-    return await db.insert('tag_event', tag_event.toJson());
+    int _result_id = 0;
+    try {
+      _result_id = await db.insert('tag_event', tag_event.toJson());
+    } on DatabaseException catch (e) {
+      logger.e("DatabaseException: $e");
+      _result_id = 0;
+    } catch (e) {
+      logger.e("Other exception: $e");
+      _result_id = 0;
+    }
+    return _result_id;
   }
 
   Future<int> updateTagEvent(TagEvent tag_event) async {
     final db = await instance.database;
-    return await db.update(
-      'tag_event',
-      tag_event.toJson(),
-      where: 'id = ?',
-      whereArgs: [tag_event.id],
-    );
+    int _result_id = 0;
+    try {
+      _result_id =
+        await db.update(
+          'tag_event',
+          tag_event.toJson(),
+          where: 'id = ?',
+          whereArgs: [tag_event.id],
+        );
+    } on DatabaseException catch (e) {
+      logger.e("DatabaseException: $e");
+      _result_id = 0;
+    } catch (e) {
+      logger.e("Other exception: $e");
+      _result_id = 0;
+    }
+    return _result_id;
   }
 
   Future<int> deleteTagEvent(int id) async {
     final db = await instance.database;
-    return await db.delete(
-      'tag_event',
-      where: 'id = ?',
-      whereArgs: [id],
-    );
+    int _result_id = 0;
+    try {
+      _result_id =
+        await db.delete(
+          'tag_event',
+          where: 'id = ?',
+          whereArgs: [id],
+        );
+        logger.d(id);
+    } on DatabaseException catch (e) {
+      logger.e("DatabaseException: $e");
+      _result_id = 0;
+    } catch (e) {
+      logger.e("Other exception: $e");
+      _result_id = 0;
+    }
+    return id;
   }
 }

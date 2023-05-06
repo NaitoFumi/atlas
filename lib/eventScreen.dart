@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -11,11 +13,13 @@ import 'utilWidget.dart';
 class EventScreen extends ConsumerStatefulWidget {
 
   final TrainingDatabase dbHelper;
+  final int eventId;
 
   EventScreen(
     {
       Key? key,
       required this.dbHelper,
+      required this.eventId,
     }
   );
 
@@ -26,192 +30,204 @@ class EventScreen extends ConsumerStatefulWidget {
 
 class _EventScreenState extends ConsumerState<EventScreen> {
 
-  TextEditingController _textController = TextEditingController();
-
-  final StateNotifierProvider<EventSelectStateController, EventSelectState> eventSelectProvider =
-    StateNotifierProvider<EventSelectStateController, EventSelectState>((ref) => EventSelectStateController());
+  final StateNotifierProvider<TagSelectStateController, TagSelectState> tagSelectProvider =
+    StateNotifierProvider<TagSelectStateController, TagSelectState>((ref) => TagSelectStateController());
 
   final dbHelper = TrainingDatabase.instance;
 
-   void _updateText() {
-    if(_textController.text.isNotEmpty){
-      setState(() {
-      });
-    }
-  }
+  // List<TagEventName>tags = [];
+  Map<int,TagEventName> mapTags = {};
+  List<MapEntry<int, TagEventName>> mapEntriesTags = [];
 
-  int selectedEvent = defEvent;
-  List<Event> events = [];
-  void _getEventList() async {
-    List<Event> _events = await dbHelper.getEvents();
+  void _getTagList(int eventId) async {
+    List<TagEventName>_tags = await dbHelper.getTagEventByEventId(eventId);
     setState(() {
-      events = _events;
+      mapTags = _tags.fold<Map<int,TagEventName>>({}, (map, item) {
+        map[item.id!] = item;
+        return map;
+      });
+      mapEntriesTags = mapTags.entries.toList();
     });
   }
 
-  List<TagEventName>tags = [];
-  void _getTagList(int taskId) async {
-    List<TagEventName>_tags = await dbHelper.getTagEventByEventId(taskId);
+  void _deleteTagEvent(int tagEventId) async {
+    logger.d(tagEventId);
+    int id = await dbHelper.deleteTagEvent(tagEventId);
+    if(id > 0) {
+      logger.i("delete Success TagEvent");
+    }
+    else {
+      logger.i("delete faile TagEvent");
+    }
     setState(() {
-      tags = _tags;
+      mapTags.remove(id);
+      mapEntriesTags = mapTags.entries.toList();
     });
   }
 
   @override
   void initState() {
     super.initState();
-    _textController.text = "";
-    _textController.addListener(_updateText);
-    _getEventList();
+    _getTagList(widget.eventId);
   }
 
   @override
   void dispose() {
     super.dispose();
-    _textController.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return
+      Scaffold(
         appBar: AppBar(
           title: Text("Setting Event"),
         ),
         body: Padding(
           padding: const EdgeInsets.all(16.0),
-          child: Column(
-            children: <Widget>[
-              // Column(
-              //   children: [
-              //     Row(
-              //       children: [
-              //         Expanded(
-              //           child: TextFormField(
-              //             keyboardType: TextInputType.name,
-              //             controller: _textController,
-              //             decoration: const InputDecoration(
-              //               labelText: "Add Event Name",
-              //               hintText: "",
-              //               border: OutlineInputBorder(),
-              //             ),
-              //           ),
-              //         ),
-              //       ]
-              //     ),
-              //     const SizedBox(height: 16.0),
-              //     Row(
-              //       mainAxisAlignment: MainAxisAlignment.center,
-              //       children: [
-              //         const Spacer(),
-              //         Expanded(
-              //           flex: 1,
-              //           child: RegistEventBtn(
-              //             dbHelper: widget.dbHelper,
-              //             name:     _textController.text,
-              //           )
-              //         ),
-              //         const Spacer(),
-              //       ],
-              //     ),
-              //   ],
-              // ),
-              const SizedBox(height: 32.0),
-              Column(
-                children: [
-                  Row(
-                    children: [
-                      Expanded(
-                        flex: 4,
-                        child: EventsMenu(
-                          dbHelper:           widget.dbHelper,
-                          // events:             events,
-                          selectedEvent:      defEvent,
-                          provider:           eventSelectProvider,
+          child:
+            Column(
+              children: <Widget>[
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    TagDropdownMenu(
+                        dbHelper: widget.dbHelper,
+                        provider: tagSelectProvider,
+                    ),
+                    const Spacer(),
+                    RegistTagBtn(
+                      dbHelper: widget.dbHelper,
+                      provider: tagSelectProvider,
+                      eventId:  widget.eventId,
+                      onPressedCallback: _getTagList,
+                    ),
+                  ],
+                ),
+                Row(
+                  children: [
+                    Expanded(
+                      child:
+                        ListView.builder(
+                          scrollDirection: Axis.vertical,
+                          shrinkWrap: true,
+                          itemBuilder: (BuildContext context, int index){
+                            MapEntry<int, TagEventName> entryTag = mapEntriesTags[index];
+                            TagEventName tagEventName = entryTag.value;
+                            return
+                            Row(
+                              children: [
+                                Expanded(
+                                  flex: 5,
+                                  child:
+                                    Container(
+                                      margin: EdgeInsets.all(10.0),
+                                      padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                                      decoration: BoxDecoration(
+                                        color: Colors.blue,
+                                        borderRadius: BorderRadius.circular(20),
+                                      ),
+                                      child:
+                                        Text(
+                                          tagEventName.name,
+                                          style: TextStyle(
+                                            color: Colors.white,
+                                          ),
+                                        ),
+                                    ),
+                                ),
+                                Expanded(
+                                  flex: 1,
+                                  child:
+                                    ElevatedButton(
+                                      onPressed: () async {
+                                        _deleteTagEvent(tagEventName.id!);
+                                      },
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: Colors.blue,
+                                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(24),
+                                        ),
+                                      ),
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: const [
+                                          Icon( Icons.remove, color: Colors.white, size: 15,),
+                                        ],
+                                      ),
+                                    )
+                                )
+                              ],
+                            );
+                          },
+                          itemCount: mapEntriesTags.length,
                         ),
-                      ),
-                    ]
-                  ),
-                  const SizedBox(height: 16.0),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Spacer(),
-                      TagDropdownMenu(
-                         dbHelper: widget.dbHelper,
-                         provider: eventSelectProvider,
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ]
-          )
+                    ),
+                  ],
+                ),
+              ]
+            )
         )
-      );
+      )
+    ;
   }
 }
 
-// class RegistEventBtn extends StatelessWidget {
+class RegistTagBtn extends ConsumerStatefulWidget {
 
-//   final TrainingDatabase dbHelper;
-//   final String name;
+  final TrainingDatabase dbHelper;
+  final StateNotifierProvider<TagSelectStateController, TagSelectState> provider;
+  final int eventId;
+  final Function(int eventId) onPressedCallback;
 
-//   RegistEventBtn(
-//     {
-//       Key? key,
-//       required this.dbHelper,
-//       required this.name,
-//     }
-//   );
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return
-//       ElevatedButton(
-//         onPressed: () async {
-//           Event event = Event(
-//             name: name
-//           );
-//           int eventId = await dbHelper.insertEvents(event);
-//           if (eventId > 0) {
-//             logger.i('Event insert with setId: $eventId');
-//           } else {
-//             logger.i('Failed to insert Event');
-//           }
-//         },
-//         style: ElevatedButton.styleFrom(
-//           backgroundColor: Colors.blue,
-//           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-//           shape: RoundedRectangleBorder(
-//             borderRadius: BorderRadius.circular(24),
-//           ),
-//         ),
-//         child: Row(
-//           mainAxisSize: MainAxisSize.min,
-//           children: const [
-//             Icon( Icons.add_task, color: Colors.white, size: 35,),
-//           ],
-//         ),
-//       )
-//     ;
-//   }
-// }
-
-class TagBoxWidget extends StatelessWidget {
-
-  final String name;
-
-  TagBoxWidget(
+  const RegistTagBtn(
     {
       Key? key,
-      required this.name,
+      required this.dbHelper,
+      required this.provider,
+      required this.eventId,
+      required this.onPressedCallback,
     }
   );
 
   @override
+  _RegistTagBtnState createState() => _RegistTagBtnState();
+}
+
+class _RegistTagBtnState extends ConsumerState<RegistTagBtn> {
+
+  @override
   Widget build(BuildContext context) {
     return
-      Text(name)
+      ElevatedButton(
+        onPressed: () async {
+          TagEvent tag_event = TagEvent(
+            eventId: widget.eventId,
+            tagId:   ref.watch(widget.provider).selectedTagId
+          );
+          int _tagEventId = await widget.dbHelper.insertTagEvent(tag_event);
+          if (_tagEventId > 0) {
+            logger.i('TagEvent insert with setId: $_tagEventId');
+          } else {
+            logger.i('Failed to insert TagEvent');
+          }
+          widget.onPressedCallback(widget.eventId);
+        },
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Colors.blue,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(24),
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: const [
+            Icon( Icons.add_task, color: Colors.white, size: 35,),
+          ],
+        ),
+      )
     ;
   }
 }
@@ -219,9 +235,9 @@ class TagBoxWidget extends StatelessWidget {
 class TagDropdownMenu extends ConsumerStatefulWidget {
 
   final TrainingDatabase dbHelper;
-  final StateNotifierProvider<EventSelectStateController, EventSelectState> provider;
+  final StateNotifierProvider<TagSelectStateController, TagSelectState> provider;
 
-  TagDropdownMenu(
+  const TagDropdownMenu(
     {
       Key? key,
       required this.dbHelper,
@@ -234,15 +250,15 @@ class TagDropdownMenu extends ConsumerStatefulWidget {
 }
 
 class _TagDropdownMenuState extends ConsumerState<TagDropdownMenu> {
-  List<Tag> _tags = [];
-  int _selectedItem = 0;
-  // String _selectedItem = "Option 1";
-  TextEditingController _textEditingController = TextEditingController();
+
+  final TextEditingController _textEditingController = TextEditingController();
+  int _selectedTag = 0;
 
  @override
   void initState() {
     super.initState();
-    getTags();
+    _getTags();
+    _selectedTag = 0;
   }
 
   @override
@@ -250,187 +266,93 @@ class _TagDropdownMenuState extends ConsumerState<TagDropdownMenu> {
     super.dispose();
   }
 
-  void getTags() async {
-     List<Tag> _tagList = await widget.dbHelper.getTag();
+  List<Tag> _tags = [];
+
+  void _getTags() async {
+     List<Tag> tagList = await widget.dbHelper.getTag();
      setState(() {
-      _tags = _tagList;
-      Tag _tag = Tag(id: 0, name: "Custom Tag");
-      _tags.insert(0, _tag);
+      _tags = tagList;
+      Tag tag = Tag(id: 0, name: "Custom Tag");
+      _tags.insert(0, tag);
      });
   }
 
   int insertedId = 0;
+
   void registTag(String name) async {
-      Tag tagData = Tag(
-        name: name
-      );
+      Tag tagData = Tag(name: name);
       insertedId = await widget.dbHelper.insertTag(tagData);
       if(insertedId > 0) {
+        logger.i('Tag insert with tagId: $insertedId');
       }
       else {
+        logger.i('Failed to insert Tag');
         insertedId = 0;
       }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        // DropdownButton<String>(
-        DropdownButton<int>(
-          hint: Text('Select an option'),
-          value: _selectedItem,
-          onChanged: (int? value) {
-            if (value == 0) {
-              showDialog(
-                context: context,
-                builder: (context) => AlertDialog(
-                  title: const Text('Enter custom Tag'),
-                  content: TextField(
-                    controller: _textEditingController,
+    return
+      Column(
+        children: [
+          DropdownButton<int>(
+            hint: Text('Select an option'),
+            value: _selectedTag,
+            onChanged: (int? value) {
+              if (value == 0) {
+                showDialog(
+                  context: context,
+                  builder: (context) => AlertDialog(
+                    title: const Text('Enter custom Tag'),
+                    content: TextField(
+                      controller: _textEditingController,
+                    ),
+                    actions: [
+                      TextButton(
+                        onPressed: () {
+                          Navigator.pop(context);
+                          setState(() {
+                            registTag(_textEditingController.text);
+                            _getTags();
+                            _selectedTag = insertedId;
+                            ref.read(widget.provider.notifier).modify(insertedId);
+                          });
+                          _textEditingController.clear();
+                        },
+                        child: const Text('Add'),
+                      ),
+                      TextButton(
+                        onPressed: () {
+                          Navigator.pop(context);
+                        },
+                        child: const Text('Cancel'),
+                      ),
+                    ],
                   ),
-                  actions: [
-                    TextButton(
-                      onPressed: () {
-                        Navigator.pop(context);
-                        setState(() {
-                          registTag(_textEditingController.text);
-                          getTags();
-                          _selectedItem = insertedId;
-                        });
-                        _textEditingController.clear();
-                      },
-                      child: const Text('Add'),
-                    ),
-                    TextButton(
-                      onPressed: () {
-                        Navigator.pop(context);
-                      },
-                      child: const Text('Cancel'),
-                    ),
-                  ],
-                ),
+                );
+              } else {
+                setState(() {
+                  _selectedTag = value ?? 0;
+                  ref.read(widget.provider.notifier).modify(_selectedTag);
+                });
+              }
+            },
+            items: _tags.map((tag) {
+              return DropdownMenuItem(
+                value: tag.id,
+                child:
+                  Row(
+                    children: [
+                      Text(tag.name),
+                    ],
+                  ),
               );
-            } else {
-              setState(() {
-                _selectedItem = value ?? 0;
-              });
-            }
-          },
-          items: _tags.map((tag) {
-            return DropdownMenuItem(
-              value: tag.id,
-              child:
-                Row(
-                  children: [
-                    Expanded(
-                      flex: 4,
-                      child: Text(tag.name)
-                    ),
-                    Expanded(
-                      flex: 1,
-                      child: (
-                        ElevatedButton(
-                          onPressed: () async {
-                            TagEvent tag_event = TagEvent(
-                              tagId: tag.id!,
-                              eventId: ref.watch(widget.provider).selectedEventId,
-                            );
-                            await widget.dbHelper.insertTagEvent(tag_event);
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.blue,
-                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(24),
-                            ),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: const [
-                              Icon(Icons.settings, color: Colors.white),
-                              SizedBox(width: 4),
-                            ],
-                          ),
-                        )
-                      )
-                    ),
-                  ],
-                ),
-            );
-          }).toList(),
-        ),
-        SizedBox(height: 16),
-        Text('Selected option: $_selectedItem'),
-      ],
-    );
+            }).toList(),
+          ),
+          const SizedBox(height: 16),
+        ],
+      )
+    ;
   }
 }
-
-
-// class CustomDropdownMenu extends StatefulWidget {
-//   @override
-//   _CustomDropdownMenuState createState() => _CustomDropdownMenuState();
-// }
-
-// class _CustomDropdownMenuState extends State<CustomDropdownMenu> {
-//   List<String> _items = ['Option 1', 'Option 2', 'Option 3', 'Custom'];
-//   String _selectedItem = "Option 1";
-//   TextEditingController _textEditingController = TextEditingController();
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return Column(
-//       children: [
-//         DropdownButton<String>(
-//           hint: Text('Select an option'),
-//           value: _selectedItem,
-//           onChanged: (String? value) {
-//             if (value == 'Custom') {
-//               showDialog(
-//                 context: context,
-//                 builder: (context) => AlertDialog(
-//                   title: const Text('Enter custom option'),
-//                   content: TextField(
-//                     controller: _textEditingController,
-//                   ),
-//                   actions: [
-//                     TextButton(
-//                       onPressed: () {
-//                         Navigator.pop(context);
-//                         setState(() {
-//                           _items.insert(_items.length - 1, _textEditingController.text);
-//                           _selectedItem = _textEditingController.text;
-//                         });
-//                         _textEditingController.clear();
-//                       },
-//                       child: const Text('Add'),
-//                     ),
-//                     TextButton(
-//                       onPressed: () {
-//                         Navigator.pop(context);
-//                       },
-//                       child: const Text('Cancel'),
-//                     ),
-//                   ],
-//                 ),
-//               );
-//             } else {
-//               setState(() {
-//                 _selectedItem = value ?? "aa";
-//               });
-//             }
-//           },
-//           items: _items.map<DropdownMenuItem<String>>((String value) {
-//             return DropdownMenuItem<String>(
-//               value: value,
-//               child: Text(value),
-//             );
-//           }).toList(),
-//         ),
-//         SizedBox(height: 16),
-//         Text('Selected option: $_selectedItem'),
-//       ],
-//     );
-//   }
-// }

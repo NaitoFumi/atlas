@@ -130,7 +130,8 @@ class _TrainingRegistWidgetState extends ConsumerState<TrainingRegistWidget> {
                 Expanded(
                   flex: 1,
                   child: EventSettingBtn(
-                    dbHelper:            dbHelper,
+                    dbHelper:          dbHelper,
+                    eventId:           ref.watch(eventSelectProvider).selectedEventId,
                     onPressedCallback: _getEventList,
                   )
                 ),

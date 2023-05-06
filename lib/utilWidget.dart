@@ -460,7 +460,7 @@ class EventsMenu extends ConsumerStatefulWidget {
 }
 class EventsMenuState extends ConsumerState<EventsMenu> {
 
-  TextEditingController _textEditingController = TextEditingController();
+  final TextEditingController _textEditingController = TextEditingController();
   int _selectedEventId = 0;
 
    @override
@@ -475,8 +475,8 @@ class EventsMenuState extends ConsumerState<EventsMenu> {
     super.dispose();
   }
 
-  int selectedEvent = defEvent;
   List<Event> events = [];
+
   void _getEventList(TrainingDatabase dbHelper,) async {
     List<Event> _events = await dbHelper.getEvents();
     setState(() {
@@ -487,10 +487,8 @@ class EventsMenuState extends ConsumerState<EventsMenu> {
   }
 
   int insertedEventId = 0;
-  void _registEvent(
-    TrainingDatabase dbHelper,
-    String eventName
-  ) async {
+
+  void _registEvent(TrainingDatabase dbHelper, String eventName) async {
     Event event = Event(name: eventName);
     insertedEventId = await dbHelper.insertEvents(event);
     if (insertedEventId > 0) {
@@ -560,7 +558,7 @@ class EventsMenuState extends ConsumerState<EventsMenu> {
               );
             }).toList(),
           ),
-          SizedBox(height: 16),
+          const SizedBox(height: 16),
         ],
       )
     ;
@@ -570,6 +568,7 @@ class EventsMenuState extends ConsumerState<EventsMenu> {
 class EventSettingBtn extends StatelessWidget {
 
   final TrainingDatabase dbHelper;
+  final int eventId;
   final Function() onPressedCallback;
 
 
@@ -577,6 +576,7 @@ class EventSettingBtn extends StatelessWidget {
     {
       Key? key,
       required this.dbHelper,
+      required this.eventId,
       required this.onPressedCallback,
     }
   );
@@ -590,7 +590,7 @@ class EventSettingBtn extends StatelessWidget {
             context,
             MaterialPageRoute(
               builder: (context) =>
-              EventScreen(dbHelper: dbHelper)
+              EventScreen(dbHelper: dbHelper, eventId: eventId)
             ),
           );
           onPressedCallback();

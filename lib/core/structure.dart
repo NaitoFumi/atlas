@@ -82,6 +82,27 @@ class EventSelectStateController extends StateNotifier<EventSelectState> {
   }
 }
 
+class TagSelectState {
+  int selectedTagId;
+
+  TagSelectState({
+    required this.selectedTagId,
+  });
+}
+
+class TagSelectStateController extends StateNotifier<TagSelectState> {
+  TagSelectStateController() : super(
+    TagSelectState(
+      selectedTagId: 0,
+    )
+  );
+  void modify(selectedTagId) {
+    state = TagSelectState(
+      selectedTagId: selectedTagId,
+    );
+  }
+}
+
 class TrainingSetFormTextList {
   int index;
   Widget widget;
