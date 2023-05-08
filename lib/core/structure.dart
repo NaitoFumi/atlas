@@ -102,17 +102,3 @@ class TagSelectStateController extends StateNotifier<TagSelectState> {
     );
   }
 }
-
-class TrainingSetFormTextList {
-  int index;
-  Widget widget;
-  StateNotifierProvider<TrainingStateController, TrainingState> provider;
-  int setId;
-
-  TrainingSetFormTextList({
-    required this.index,
-    required this.widget,
-    required this.provider,
-    required this.setId,
-  });
-}

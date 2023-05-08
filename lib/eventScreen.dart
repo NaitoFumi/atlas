@@ -35,7 +35,6 @@ class _EventScreenState extends ConsumerState<EventScreen> {
 
   final dbHelper = TrainingDatabase.instance;
 
-  // List<TagEventName>tags = [];
   Map<int,TagEventName> mapTags = {};
   List<MapEntry<int, TagEventName>> mapEntriesTags = [];
 
@@ -51,7 +50,6 @@ class _EventScreenState extends ConsumerState<EventScreen> {
   }
 
   void _deleteTagEvent(int tagEventId) async {
-    logger.d(tagEventId);
     int id = await dbHelper.deleteTagEvent(tagEventId);
     if(id > 0) {
       logger.i("delete Success TagEvent");
@@ -144,7 +142,7 @@ class _EventScreenState extends ConsumerState<EventScreen> {
                                         _deleteTagEvent(tagEventName.id!);
                                       },
                                       style: ElevatedButton.styleFrom(
-                                        backgroundColor: Colors.blue,
+                                        backgroundColor: Colors.red,
                                         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                                         shape: RoundedRectangleBorder(
                                           borderRadius: BorderRadius.circular(24),

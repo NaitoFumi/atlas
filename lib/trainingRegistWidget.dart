@@ -32,7 +32,6 @@ class _TrainingRegistWidgetState extends ConsumerState<TrainingRegistWidget> {
 
   final dbHelper = TrainingDatabase.instance;
 
-  // Data fields
   int selectedEvent = defEvent;
   List<Event> events = [];
 
@@ -43,20 +42,18 @@ class _TrainingRegistWidgetState extends ConsumerState<TrainingRegistWidget> {
     });
   }
 
-  List<TrainingSet> _sets =[];
+  Map<int,TrainingSetFormTextWidget> mapTrainingSetForm = {};
+  List<MapEntry<int, TrainingSetFormTextWidget>> mapEntriesTrainingSetForm = [];
   int index = 0;
-  List<TrainingSetFormTextList> _items = <TrainingSetFormTextList>[];
-  List<TrainingSetFormTextList> _list = <TrainingSetFormTextList>[];
 
   void _getTrainingSetList(int taskId) async {
-     _sets= await dbHelper.getTrainingSets(taskId);
-    for (final set in _sets)
-    {
-      addWidgetList(widget.bodyWeight, set.weight, set.reps, set.rm, setId:set.id!);
+    List<TrainingSet> _sets= await dbHelper.getTrainingSets(taskId);
+    for (final set in _sets) {
+      addTrainingSetFormTextList(widget.bodyWeight, set.weight, set.reps, set.rm, setId:set.id!);
     }
   }
 
-  void addWidgetList(double bodyWeight, double weight, int reps, double rm, {int setId = 0}) {
+  void addTrainingSetFormTextList(double bodyWeight, double weight, int reps, double rm, {int setId = 0}) {
 
     final StateNotifierProvider<TrainingStateController, TrainingState> trainingProvider =
       StateNotifierProvider<TrainingStateController, TrainingState>((ref) => TrainingStateController(
@@ -64,24 +61,35 @@ class _TrainingRegistWidgetState extends ConsumerState<TrainingRegistWidget> {
         reps:   reps,
         rm:     rm,
       ));
-
-    _list.add(
-      TrainingSetFormTextList(
-        index:    ++index,
-        provider: trainingProvider,
-        setId:    setId,
-        widget:   TrainingSetFormTextWidget(
-          provider:   trainingProvider,
-          bodyWeight: bodyWeight,
-          weight:     weight,
-          reps:       reps,
-          rm:         rm,
-          onPressedCallback: addWidgetList,
-        ),
-      )
-    );
+    mapTrainingSetForm[index] = TrainingSetFormTextWidget(
+        index:      index++,
+        provider:   trainingProvider,
+        bodyWeight: bodyWeight,
+        setId:      setId,
+        weight:     weight,
+        reps:       reps,
+        rm:         rm,
+        callBackFunc: addTrainingSetFormTextList,
+        onPressedCallback: deleteTrainingSetFormTextList,
+      );
     setState(() {
-      _items = _list;
+      // _items = _list;
+      mapEntriesTrainingSetForm = mapTrainingSetForm.entries.toList();
+    });
+  }
+
+  void deleteTrainingSetFormTextList(int index) async {
+    MapEntry<int, TrainingSetFormTextWidget> entry = mapEntriesTrainingSetForm[index];
+    int id = await dbHelper.deleteTrainingSet(entry.value.setId);
+    if(id > 0) {
+      logger.i("delete Success TagEvent");
+      mapTrainingSetForm.remove(index);
+    }
+    else {
+      logger.i("delete faile TagEvent");
+    }
+    setState(() {
+      mapEntriesTrainingSetForm = mapTrainingSetForm.entries.toList();
     });
   }
 
@@ -102,7 +110,7 @@ class _TrainingRegistWidgetState extends ConsumerState<TrainingRegistWidget> {
     }
     else {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        addWidgetList(widget.bodyWeight, 0, 0, 0);
+        addTrainingSetFormTextList(widget.bodyWeight, 0, 0, 0);
       });
     }
   }
@@ -142,9 +150,10 @@ class _TrainingRegistWidgetState extends ConsumerState<TrainingRegistWidget> {
               scrollDirection: Axis.vertical,
               shrinkWrap: true,
               itemBuilder: (BuildContext context, int index){
-                return _items[index].widget;
+                MapEntry<int, TrainingSetFormTextWidget> entry = mapEntriesTrainingSetForm[index];
+                return entry.value;
               },
-              itemCount: _items.length,
+              itemCount: mapEntriesTrainingSetForm.length,
             ),
             const SizedBox(height: 16.0),
             Row(
@@ -155,7 +164,7 @@ class _TrainingRegistWidgetState extends ConsumerState<TrainingRegistWidget> {
                   flex: 1,
                   child:
                     AddBtnTrainingSetForm(
-                      onPressedCallback: addWidgetList,
+                      onPressedCallback: addTrainingSetFormTextList,
                       bodyWeight: widget.bodyWeight,
                     )
                 ),
@@ -164,7 +173,7 @@ class _TrainingRegistWidgetState extends ConsumerState<TrainingRegistWidget> {
                   flex: 1,
                   child: RegistBtnTrainingSet(
                     taskId:              paramTaskId,
-                    trainingSetFormList: _items,
+                    trainingSetFormList: mapEntriesTrainingSetForm,
                     date:                widget.paramDate,
                     eventId:             ref.watch(eventSelectProvider).selectedEventId,
                     dbHelper:            dbHelper,

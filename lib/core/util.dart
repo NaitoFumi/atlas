@@ -45,17 +45,17 @@ Future<Map> loadTrainigTasks(TrainingDatabase dbHelper, DateTime startDate, Date
   return _events;
 }
 
-Future<bool> registTrainingRecodes(int taskId, List<TrainingSetFormTextList> items, DateTime date, int eventId, TrainingDatabase dbHelper, ref ) async {
+Future<bool> registTrainingRecodes(int taskId, List<MapEntry<int, TrainingSetFormTextWidget>> trainingSetFormList, DateTime date, int eventId, TrainingDatabase dbHelper, ref ) async {
 
   int dayUnix = roundUnixTimeToDays(date.millisecondsSinceEpoch);
-  int _taskId = taskId;
+  logger.d(taskId);
 
-  if (_taskId == 0) {
+  if (taskId == 0) {
     TrainingTask task = TrainingTask(
       date: dayUnix,
       eventId: eventId
     );
-    _taskId = await dbHelper.insertTrainingTask(task);
+    int _taskId = await dbHelper.insertTrainingTask(task);
     if (_taskId > 0) {
       logger.i('TrainingTask inserted with taskId: $_taskId');
     } else {
@@ -65,11 +65,11 @@ Future<bool> registTrainingRecodes(int taskId, List<TrainingSetFormTextList> ite
   }
   else {
     TrainingTask task = TrainingTask(
-      id: _taskId,
+      id: taskId,
       date: dayUnix,
       eventId: eventId
     );
-    _taskId = await dbHelper.updateTrainingTask(task);
+    int _taskId = await dbHelper.updateTrainingTask(task);
     if (_taskId > 0) {
       logger.i('TrainingTask updated with taskId: $_taskId');
     } else {
@@ -77,16 +77,15 @@ Future<bool> registTrainingRecodes(int taskId, List<TrainingSetFormTextList> ite
       return false;
     }
   }
-
-  for (TrainingSetFormTextList item in items) {
-    double weight = ref.watch(item.provider).weight;
-    int reps = ref.watch(item.provider).reps;
-    double rm = ref.watch(item.provider).rm;
-    if (item.setId != 0) {
+  trainingSetFormList.forEach((trainingSetForm) async {
+    double weight = ref.watch(trainingSetForm.value.provider).weight;
+    int reps = ref.watch(trainingSetForm.value.provider).reps;
+    double rm = ref.watch(trainingSetForm.value.provider).rm;
+    if (trainingSetForm.value.setId != 0) {
       if(reps != 0 || weight != 0) {
         TrainingSet set = TrainingSet(
-          id: item.setId,
-          trainingTaskId: _taskId,
+          id: trainingSetForm.value.setId,
+          trainingTaskId: taskId,
           weight: weight,
           reps: reps,
           rm: rm,
@@ -98,7 +97,7 @@ Future<bool> registTrainingRecodes(int taskId, List<TrainingSetFormTextList> ite
           logger.i('Failed to update TrainingSet');
         }
       } else {
-        int setId = await dbHelper.deleteTrainingSet(item.setId);
+        int setId = await dbHelper.deleteTrainingSet(trainingSetForm.value.setId);
         if (setId > 0) {
           logger.i('TrainingSet delete with setId: $setId');
         } else {
@@ -109,7 +108,7 @@ Future<bool> registTrainingRecodes(int taskId, List<TrainingSetFormTextList> ite
     else {
       if(reps != 0 || weight != 0) {
         TrainingSet set = TrainingSet(
-          trainingTaskId: _taskId,
+          trainingTaskId: taskId,
           weight: weight,
           reps: reps,
           rm: rm,
@@ -122,13 +121,12 @@ Future<bool> registTrainingRecodes(int taskId, List<TrainingSetFormTextList> ite
         }
       }
     }
-  }
+  });
 
   List<TrainingSet> setList = [];
-  setList = await dbHelper.getTrainingSets(_taskId);
-  // logger.d(setList);
+  setList = await dbHelper.getTrainingSets(taskId);
   if(setList.isEmpty) {
-    _taskId = await dbHelper.deleteTrainingTask(_taskId);
+    int _taskId = await dbHelper.deleteTrainingTask(taskId);
     if (_taskId > 0) {
       logger.i('TrainingTask delete with taskId: $_taskId');
     } else {

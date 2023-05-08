@@ -102,21 +102,27 @@ class TrainingSetFormText extends StatelessWidget {
 }
 class TrainingSetFormTextWidget extends ConsumerStatefulWidget {
 
+  final int index;
   final StateNotifierProvider<TrainingStateController, TrainingState> provider;
   final double bodyWeight;
+  final int setId;
   final double weight;
   final int reps;
   final double rm;
-  final Function(double bodyWeight, double weight, int reps, double rm) onPressedCallback;
+  final Function(double bodyWeight, double weight, int reps, double rm) callBackFunc;
+  final Function(int index) onPressedCallback;
 
   TrainingSetFormTextWidget(
     {
       Key? key,
+      required this.index,
       required this.provider,
       required this.bodyWeight,
+      required this.setId,
       required this.weight,
       required this.reps,
       required this.rm,
+      required this.callBackFunc,
       required this.onPressedCallback,
     }
   );
@@ -206,8 +212,12 @@ class TrainingSetFormTextWidgetState extends ConsumerState<TrainingSetFormTextWi
               weight:     weight,
               reps:       reps,
               rm:         rm,
+              onPressedCallback: widget.callBackFunc,
+            ),
+            DeleteTrainingSetBtn(
+              index: widget.index,
               onPressedCallback: widget.onPressedCallback,
-            )
+            ),
           ]
         ),
         Column(
@@ -262,6 +272,45 @@ class CopyTrainingSetBtn extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: const [
             Icon( Icons.add_task, color: Colors.white, size: 35,),
+          ],
+        ),
+      )
+    ;
+  }
+}
+
+class DeleteTrainingSetBtn extends StatelessWidget {
+
+  final int index;
+  final Function(int setId) onPressedCallback;
+
+  DeleteTrainingSetBtn(
+    {
+      Key? key,
+      required int this.index,
+      required this.onPressedCallback,
+    }
+  );
+
+  @override
+  Widget build(BuildContext context) {
+    return
+      ElevatedButton(
+        onPressed: () async {
+          logger.d(index);
+          onPressedCallback(index);
+        },
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Colors.red,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(24),
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: const [
+            Icon( Icons.remove, color: Colors.white, size: 35,),
           ],
         ),
       )
@@ -394,7 +443,7 @@ class AddBtnTrainingSetForm extends StatelessWidget {
 class RegistBtnTrainingSet extends StatelessWidget {
 
   final int taskId;
-  final List<TrainingSetFormTextList> trainingSetFormList;
+  final List<MapEntry<int, TrainingSetFormTextWidget>> trainingSetFormList;
   final DateTime date;
   final int eventId;
   final TrainingDatabase dbHelper;
@@ -417,7 +466,7 @@ class RegistBtnTrainingSet extends StatelessWidget {
     return
       ElevatedButton(
         onPressed: () async {
-          registTrainingRecodes(taskId,trainingSetFormList, date, eventId, dbHelper, ref);
+          registTrainingRecodes(taskId, trainingSetFormList, date, eventId, dbHelper, ref);
           Navigator.pop(context);
         },
         style: ElevatedButton.styleFrom(
